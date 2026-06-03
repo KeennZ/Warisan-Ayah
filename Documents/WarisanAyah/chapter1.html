@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Warisan Ayah — Chapter 1: Bisikan di Balik Duka</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --paper: #c8b89a;
+    --paper-dark: #a89070;
+    --ink: #1a1410;
+    --ink-light: #3d2f22;
+    --gold: #c9a84c;
+    --gold-dim: #8a6f32;
+    --red-accent: #8b2020;
+    --green-accent: #2d5a2d;
+  }
+
+  body {
+    background: #0d0b08;
+    color: var(--paper);
+    font-family: 'Crimson Text', serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    user-select: none;
+  }
+
+  /* ══ HUD ══ */
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none; z-index: 100;
+  }
+
+  #chapter-banner {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 10px 20px;
+    background: linear-gradient(to bottom, rgba(10,8,5,0.95), transparent);
+    display: flex; align-items: center; gap: 16px;
+  }
+  #back-btn {
+    pointer-events: all; background: transparent;
+    border: 1px solid rgba(201,168,76,0.4); color: var(--gold);
+    font-family: 'Special Elite', cursive; font-size: 11px;
+    letter-spacing: 2px; padding: 5px 12px; cursor: pointer;
+    transition: all 0.2s; text-transform: uppercase;
+  }
+  #back-btn:hover { background: rgba(201,168,76,0.1); border-color: var(--gold); }
+  #chapter-label { font-family: 'Special Elite', cursive; font-size: 10px; letter-spacing: 3px; color: var(--gold-dim); text-transform: uppercase; }
+  #chapter-title { font-family: 'Playfair Display', serif; font-size: 15px; color: var(--paper); font-style: italic; }
+
+  /* Mission notes */
+  #mission-notes {
+    position: absolute; top: 50px; right: 16px; width: 220px;
+    background: rgba(15,10,5,0.92); border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 2px; pointer-events: all; overflow: hidden;
+  }
+  #notes-header {
+    background: rgba(201,168,76,0.1); border-bottom: 1px solid rgba(201,168,76,0.2);
+    padding: 7px 12px; display: flex; align-items: center; gap: 8px; cursor: pointer;
+  }
+  #notes-header span { font-family: 'Special Elite', cursive; font-size: 10px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; flex: 1; }
+  #notes-toggle { color: var(--gold-dim); font-size: 12px; }
+  #notes-body { padding: 10px 12px; }
+  .mission-item {
+    display: flex; align-items: flex-start; gap: 8px; padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px;
+    color: rgba(200,184,154,0.7); line-height: 1.4; transition: all 0.4s;
+  }
+  .mission-item:last-child { border-bottom: none; }
+  .mission-item.done { color: var(--green-accent); text-decoration: line-through; opacity: 0.7; }
+  .mission-item.active { color: var(--paper); }
+  .mission-check {
+    width: 12px; height: 12px; border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 1px; flex-shrink: 0; margin-top: 1px;
+    display: flex; align-items: center; justify-content: center; font-size: 9px;
+  }
+  .mission-item.done .mission-check { background: var(--green-accent); border-color: var(--green-accent); color: #aaffaa; }
+  .mission-item.active .mission-check { border-color: var(--gold); }
+  #notes-progress { margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(201,168,76,0.15); font-family: 'Special Elite', cursive; font-size: 10px; color: var(--gold-dim); letter-spacing: 1px; text-align: right; }
+  #progress-bar-wrap { height: 2px; background: rgba(255,255,255,0.08); margin-top: 4px; border-radius: 1px; overflow: hidden; }
+  #progress-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.6s ease; }
+
+  /* Evidence bar */
+  #evidence-bar {
+    position: absolute; bottom: 16px; right: 16px;
+    background: rgba(10,8,5,0.9); border: 1px solid rgba(201,168,76,0.2); padding: 8px 12px; min-width: 160px;
+  }
+  #evidence-title { font-family: 'Special Elite', cursive; font-size: 9px; letter-spacing: 2px; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 6px; }
+  .evidence-slot { display: flex; align-items: center; gap: 6px; font-size: 11px; color: rgba(200,184,154,0.4); padding: 2px 0; transition: color 0.4s; font-family: 'Crimson Text', serif; font-style: italic; }
+  .evidence-slot.found { color: var(--gold); }
+  .evidence-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.1); flex-shrink: 0; transition: background 0.4s; }
+  .evidence-slot.found .evidence-dot { background: var(--gold); }
+
+  /* Hint */
+  #hint-box {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,8,5,0.85); border: 1px solid rgba(201,168,76,0.2);
+    padding: 6px 16px; font-size: 11px; letter-spacing: 1.5px;
+    color: rgba(200,184,154,0.6); font-family: 'Special Elite', cursive;
+    text-transform: uppercase; pointer-events: none; opacity: 0; transition: opacity 0.3s; white-space: nowrap;
+  }
+  #hint-box.show { opacity: 1; }
+
+  /* Controls hint */
+  #controls-hint { position: absolute; bottom: 16px; left: 16px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; }
+  .key-row { display: flex; gap: 4px; justify-content: center; }
+  .key { width: 22px; height: 22px; background: rgba(201,168,76,0.08); border: 1px solid rgba(201,168,76,0.2); border-radius: 2px; display: flex; align-items: center; justify-content: center; font-family: 'Special Elite', cursive; font-size: 9px; color: rgba(200,184,154,0.4); }
+  #controls-label { font-family: 'Special Elite', cursive; font-size: 8px; letter-spacing: 1px; color: rgba(200,184,154,0.25); text-transform: uppercase; text-align: center; margin-top: 2px; }
+
+  /* ══ GAME WORLD ══ */
+  #game-wrap { width: 100vw; height: 100vh; overflow: hidden; position: relative; }
+
+  #world {
+    position: absolute;
+    /* Map is 1672x941, we scale it up for the game world */
+    width: 2508px;  /* 1672 * 1.5 */
+    height: 1412px; /* 941 * 1.5 */
+    background-image: url('./asset/chapter1.png');
+    background-size: 100% 100%;
+    image-rendering: pixelated;
+  }
+
+  /* ══ PLAYER SPRITE ══ */
+  #player {
+    position: absolute;
+    width: 56px; height: 72px;
+    z-index: 30;
+    pointer-events: none;
+    image-rendering: pixelated;
+  }
+  #player img {
+    width: 100%; height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.7));
+  }
+  #player-name {
+    position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%);
+    white-space: nowrap; font-family: 'Special Elite', cursive;
+    font-size: 9px; letter-spacing: 1px; color: rgba(200,184,154,0.7);
+    background: rgba(10,8,5,0.6); padding: 1px 5px;
+  }
+  #player-shadow {
+    position: absolute; bottom: -6px; left: 50%; transform: translateX(-50%);
+    width: 32px; height: 8px; background: rgba(0,0,0,0.35); border-radius: 50%;
+  }
+
+  /* ══ NPC SPRITES ══ */
+  .npc {
+    position: absolute;
+    cursor: pointer;
+    z-index: 20;
+    display: flex; flex-direction: column; align-items: center;
+    transition: filter 0.2s;
+    image-rendering: pixelated;
+  }
+  .npc:hover { filter: brightness(1.2) drop-shadow(0 0 8px rgba(201,168,76,0.5)); }
+  .npc.nearby { filter: brightness(1.25) drop-shadow(0 0 10px rgba(201,168,76,0.6)); }
+  .npc.spoken { filter: brightness(0.65) saturate(0.5); }
+
+  .npc-sprite {
+    width: 64px; height: 80px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.8));
+  }
+  /* Bigger NPC sprites (500px originals) */
+  .npc-sprite.big { width: 72px; height: 90px; }
+
+  .npc-shadow {
+    width: 36px; height: 8px;
+    background: rgba(0,0,0,0.35); border-radius: 50%;
+    margin-top: -4px;
+  }
+  .npc-label {
+    font-family: 'Special Elite', cursive; font-size: 9px; letter-spacing: 1px;
+    color: rgba(200,184,154,0.7); text-transform: uppercase; white-space: nowrap;
+    background: rgba(10,8,5,0.65); padding: 2px 7px; margin-top: 4px;
+  }
+  .npc.spoken .npc-label { color: rgba(45,90,45,0.9); }
+  .npc-bubble {
+    position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+    background: var(--gold); color: #1a1000; font-size: 10px; font-weight: bold;
+    width: 18px; height: 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    animation: pulse-bubble 1.5s infinite; font-family: serif;
+    box-shadow: 0 0 8px rgba(201,168,76,0.5);
+  }
+  .npc.spoken .npc-bubble { background: var(--green-accent); color: #aaffaa; animation: none; }
+  @keyframes pulse-bubble { 0%,100%{transform:translateX(-50%) scale(1)} 50%{transform:translateX(-50%) scale(1.2)} }
+
+  /* ══ DIALOGUE ══ */
+  #dialogue-overlay {
+    position: fixed; inset: 0; background: rgba(5,3,1,0.65);
+    z-index: 200; display: none; align-items: flex-end;
+    justify-content: center; padding-bottom: 40px;
+  }
+  #dialogue-overlay.show { display: flex; }
+  #dialogue-box {
+    width: 760px; max-width: 96vw;
+    background: rgba(12,9,5,0.97); border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 2px; overflow: hidden; animation: slide-up 0.25s ease;
+  }
+  @keyframes slide-up { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+  #dialogue-speaker-bar {
+    background: rgba(201,168,76,0.08); border-bottom: 1px solid rgba(201,168,76,0.2);
+    padding: 8px 16px; display: flex; align-items: center; gap: 12px;
+  }
+  #speaker-portrait {
+    width: 52px; height: 52px; border-radius: 2px;
+    border: 1px solid rgba(201,168,76,0.3); overflow: hidden; flex-shrink: 0;
+    background: rgba(30,20,10,0.8);
+  }
+  #speaker-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+  #speaker-name { font-family: 'Special Elite', cursive; font-size: 13px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; }
+  #speaker-role { font-size: 11px; color: rgba(200,184,154,0.5); font-style: italic; margin-top: 2px; }
+
+  #trust-meter-wrap { margin-left: auto; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+  #trust-label { font-family: 'Special Elite', cursive; font-size: 9px; letter-spacing: 1px; color: var(--gold-dim); text-transform: uppercase; }
+  #trust-bar-track { width: 90px; height: 3px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  #trust-bar-fill { height: 100%; background: var(--gold); width: 30%; transition: width 0.6s ease; border-radius: 2px; }
+
+  #dialogue-text-area { padding: 16px 18px; min-height: 80px; }
+  #dialogue-text { font-size: 15px; line-height: 1.75; color: var(--paper); font-style: italic; }
+
+  #dialogue-choices { padding: 0 18px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .choice-btn {
+    background: transparent; border: 1px solid rgba(201,168,76,0.2);
+    color: rgba(200,184,154,0.8); font-family: 'Crimson Text', serif;
+    font-size: 13px; padding: 8px 14px; cursor: pointer; text-align: left;
+    border-radius: 1px; transition: all 0.2s; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4;
+  }
+  .choice-btn:hover { background: rgba(201,168,76,0.07); border-color: var(--gold); color: var(--paper); }
+  .choice-num { font-family: 'Special Elite', cursive; font-size: 10px; color: var(--gold-dim); flex-shrink: 0; padding-top: 2px; }
+
+  #dialogue-evidence { padding: 0 18px 14px; display: none; }
+  #evidence-found-card { background: rgba(201,168,76,0.05); border: 1px solid rgba(201,168,76,0.25); border-left: 3px solid var(--gold); padding: 10px 14px; }
+  #evidence-found-label { font-family: 'Special Elite', cursive; font-size: 9px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
+  #evidence-found-text { font-size: 13px; color: var(--paper); font-style: italic; line-height: 1.5; }
+
+  #continue-btn {
+    display: none; width: calc(100% - 36px); margin: 0 18px 16px;
+    background: transparent; border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold); font-family: 'Special Elite', cursive;
+    font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+    padding: 8px; cursor: pointer; transition: all 0.2s;
+  }
+  #continue-btn:hover { background: rgba(201,168,76,0.08); }
+
+  /* ══ CHAPTER COMPLETE ══ */
+  #chapter-complete {
+    position: fixed; inset: 0; background: rgba(5,3,1,0.95);
+    z-index: 500; display: none; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px;
+  }
+  #chapter-complete.show { display: flex; animation: fade-in 1s ease; }
+  @keyframes fade-in { from{opacity:0} to{opacity:1} }
+
+  #complete-label { font-family: 'Special Elite', cursive; font-size: 11px; letter-spacing: 4px; color: var(--gold-dim); text-transform: uppercase; }
+  #complete-title { font-family: 'Playfair Display', serif; font-size: 42px; color: var(--paper); text-align: center; line-height: 1.2; }
+  #complete-quote { font-family: 'Playfair Display', serif; font-size: 16px; font-style: italic; color: rgba(200,184,154,0.6); text-align: center; max-width: 480px; line-height: 1.6; border-top: 1px solid rgba(201,168,76,0.15); border-bottom: 1px solid rgba(201,168,76,0.15); padding: 16px 20px; }
+  #complete-evidence-list { display: flex; gap: 16px; }
+  .complete-evidence-card { background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.2); padding: 12px 16px; text-align: center; min-width: 130px; }
+  .cev-icon { font-size: 22px; margin-bottom: 6px; }
+  .cev-title { font-family: 'Special Elite', cursive; font-size: 10px; letter-spacing: 1px; color: var(--gold); text-transform: uppercase; margin-bottom: 3px; }
+  .cev-desc { font-size: 11px; color: rgba(200,184,154,0.6); font-style: italic; }
+  .complete-actions { display: flex; gap: 16px; margin-top: 8px; }
+  .complete-actions button {
+    background: transparent; border: 1px solid rgba(201,168,76,0.4); color: var(--gold);
+    font-family: 'Special Elite', cursive; font-size: 11px; letter-spacing: 3px;
+    text-transform: uppercase; padding: 12px 28px; cursor: pointer; transition: all 0.2s;
+  }
+  .complete-actions button:hover { background: rgba(201,168,76,0.08); }
+</style>
+</head>
+<body>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="chapter-banner">
+    <button id="back-btn" onclick="goBack()">← Menu</button>
+    <div>
+      <div id="chapter-label">Chapter 1</div>
+      <div id="chapter-title">"Bisikan di Balik Duka"</div>
+    </div>
+  </div>
+
+  <div id="mission-notes">
+    <div id="notes-header" onclick="toggleNotes()">
+      <span>📋 Catatan Misi</span>
+      <span id="notes-toggle">▲</span>
+    </div>
+    <div id="notes-body">
+      <div class="mission-item active" id="task-hendra"><div class="mission-check"></div><div>Temui Paman Hendra</div></div>
+      <div class="mission-item" id="task-sari"><div class="mission-check"></div><div>Temui Bu Sari</div></div>
+      <div class="mission-item" id="task-dodi"><div class="mission-check"></div><div>Temui Pak Dodi</div></div>
+      <div class="mission-item" id="task-mama"><div class="mission-check"></div><div>Temui Mama</div></div>
+      <div id="notes-progress">
+        <span id="progress-text">0 / 4 Selesai</span>
+        <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="evidence-bar">
+    <div id="evidence-title">📁 Bukti Terkumpul</div>
+    <div class="evidence-slot" id="ev1"><div class="evidence-dot"></div><span>Amplop kontraktor</span></div>
+    <div class="evidence-slot" id="ev2"><div class="evidence-dot"></div><span>Catatan mobil mewah</span></div>
+    <div class="evidence-slot" id="ev3"><div class="evidence-dot"></div><span>Nama rekan terlibat</span></div>
+    <div class="evidence-slot" id="ev4"><div class="evidence-dot"></div><span>Dokumen tersembunyi</span></div>
+  </div>
+
+  <div id="hint-box">[ E ] Ajak bicara</div>
+
+  <div id="controls-hint">
+    <div class="key-row"><div class="key">W</div></div>
+    <div class="key-row"><div class="key">A</div><div class="key">S</div><div class="key">D</div></div>
+    <div id="controls-label">Bergerak</div>
+  </div>
+</div>
+
+<!-- GAME WORLD -->
+<div id="game-wrap">
+  <div id="world">
+
+    <!-- ══ NPCs ══ -->
+
+    <!-- Paman Hendra — ruang tamu kiri atas -->
+    <div class="npc" id="npc-hendra" style="left:600px;top:320px;" onclick="startDialogue('hendra')">
+      <div class="npc-bubble">!</div>
+      <img class="npc-sprite" src="./asset/char/npc_agus.png" alt="Paman Agus">
+      <div class="npc-shadow"></div>
+      <div class="npc-label">Paman Hendra</div>
+    </div>
+
+    <!-- Bu Sari — taman kanan atas -->
+    <div class="npc" id="npc-sari" style="left:1180px;top:240px;" onclick="startDialogue('sari')">
+      <div class="npc-bubble">!</div>
+      <img class="npc-sprite big" src="./asset/char/npc_cici.png" alt="Bu Cici">
+      <div class="npc-shadow"></div>
+      <div class="npc-label">Bu Sari</div>
+    </div>
+
+    <!-- Pak Dodi — area tengah/jalan -->
+    <div class="npc" id="npc-dodi" style="left:760px;top: 1000px;" onclick="startDialogue('dodi')">
+      <div class="npc-bubble">!</div>
+      <img class="npc-sprite" src="./asset/char/npc_gunawan.png" alt="Pak Gunawan">
+      <div class="npc-shadow"></div>
+      <div class="npc-label">Pak Dodi</div>
+    </div>
+
+    <!-- Mama — interior rumah kanan bawah -->
+    <div class="npc" id="npc-mama" style="left:1280px;top:950px;" onclick="startDialogue('mama')">
+      <div class="npc-bubble">!</div>
+      <img class="npc-sprite big" src="./asset/char/npc_wiwi.png" alt="Mama">
+      <div class="npc-shadow"></div>
+      <div class="npc-label">Mama</div>
+    </div>
+
+    <!-- ══ PLAYER ══ -->
+    <div id="player" style="left:620px;top:550px;">
+      <div id="player-shadow"></div>
+      <img id="player-img" src="./asset/char/down.png" alt="Raka">
+      <div id="player-name">RAKA</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- DIALOGUE -->
+<div id="dialogue-overlay">
+  <div id="dialogue-box">
+    <div id="dialogue-speaker-bar">
+      <div id="speaker-portrait"><img id="speaker-portrait-img" src="" alt=""></div>
+      <div>
+        <div id="speaker-name"></div>
+        <div id="speaker-role"></div>
+      </div>
+      <div id="trust-meter-wrap">
+        <div id="trust-label">Kepercayaan</div>
+        <div id="trust-bar-track"><div id="trust-bar-fill"></div></div>
+      </div>
+    </div>
+    <div id="dialogue-text-area"><div id="dialogue-text"></div></div>
+    <div id="dialogue-evidence">
+      <div id="evidence-found-card">
+        <div id="evidence-found-label">🔍 Petunjuk Ditemukan</div>
+        <div id="evidence-found-text"></div>
+      </div>
+    </div>
+    <div id="dialogue-choices"></div>
+    <button id="continue-btn" onclick="closeDialogue()">Lanjutkan ↩</button>
+  </div>
+</div>
+
+<!-- CHAPTER COMPLETE -->
+<div id="chapter-complete">
+  <div id="complete-label">Chapter 1 Selesai</div>
+  <div id="complete-title">Bisikan di Balik Duka</div>
+  <div id="complete-quote">"Kamu tidak bisa terus menutup mata, Raka. Ayah mungkin sudah pergi — tapi kebenarannya masih ada, menunggu untuk diungkap."</div>
+  <div id="complete-evidence-list">
+    <div class="complete-evidence-card"><div class="cev-icon">📜</div><div class="cev-title">Map Merah</div><div class="cev-desc">Dari kontraktor Pak Budi Santoso</div></div>
+    <div class="complete-evidence-card"><div class="cev-icon">🚗</div><div class="cev-title">Rekapan Anggaran penting</div><div class="cev-desc">Mobil hitam plat luar kota</div></div>
+    <div class="complete-evidence-card"><div class="cev-icon">👤</div><div class="cev-title">Transaksi Mencurigakan</div><div class="cev-desc">RAB fiktif</div></div>
+    <div class="complete-evidence-card"><div class="cev-icon">📁</div><div class="cev-title">Kartu Akses Mama</div><div class="cev-desc">Tanpa mama aku tidak akan bisa masuk</div></div>
+  </div>
+  <div class="complete-actions">
+    <button onclick="returnToMenu()">← Kembali ke Menu</button>
+    <button onclick="nextChapter()">▶ Lanjut ke Chapter 2</button>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  GAME STATE
+// ══════════════════════════════════════
+const WORLD_W = 2508, WORLD_H = 1412;
+let VIEW_W = window.innerWidth, VIEW_H = window.innerHeight;
+
+const state = {
+  playerX: 640, playerY: 580,
+  speed: 4,
+  keys: {},
+  facing: 'right',   // left | right | back | idle
+  walking: false,
+  walkFrame: 0,
+  walkTimer: 0,
+  npcSpoken: { hendra:false, sari:false, dodi:false, mama:false },
+  completedCount: 0,
+  notesOpen: true,
+  nearNPC: null,
+  dialogueActive: false,
+  worldOffX: 0, worldOffY: 0,
+};
+
+// Walk animation frames
+const WALK_FRAMES = {
+  right: ['walk1.png','walk2.png','walk3.png','walk5.png'],
+  left:  ['walk1.png','walk2.png','walk3.png','walk5.png'], // mirrored via CSS
+  back:  ['up.png'],
+  idle:  ['down.png'],
+};
+
+// NPC data
+const npcData = {
+  hendra: { x:600, y:355, name:'Paman Hendra', role:'Adik Ayah',        portrait:'./asset/char/npc_agus.png', trust:40 },
+  sari:   { x:1216, y:275, name:'Bu Sari',     role:'Tetangga Lama',    portrait:'./asset/char/npc_wiwi.png',   trust:30 },
+  dodi:   { x:796, y:1000, name:'Pak Dodi',      role:'Rekan Kerja Ayah', portrait:'./asset/char/npc_gunawan.png',   trust:20 },
+  mama:   { x:1316, y:950, name:'Mama',         role:'Ibunda Raka',      portrait:'./asset/char/npc_cici.png',   trust:60 },
+};
+
+// ══════════════════════════════════════
+//  DIALOGUE DATA (same as before)
+// ══════════════════════════════════════
+const dialogues = {
+ hendra: [
+    { text:"Raka... kamu tidak perlu tahu semua ini. Ayahmu sudah pergi, biarkan ia tenang.", choices:[
+      {text:"Paman, aku hanya ingin mengerti. Apa benar ayah pernah menerima 'amplop'?", trust:+20, next:1},
+      {text:"Ayah meninggalkan catatan, Paman. Ia memintaku untuk tidak membiarkan ini berlanjut.", trust:+15, next:2},
+      {text:"Aku tahu Paman menyimpan sesuatu. Ceritakan padaku!", trust:-10, next:3},
+    ]},
+    { text:"...*menghela napas* Ayahmu sering terlihat gelisah setelah rapat proyek jalan itu. Ada orang yang datang dengan tas besar. Ayahmu tidak banyak bicara, tapi amplop itu masuk ke laci kantor.", choices:[
+      {text:"Amplop itu untuk siapa, Paman? Apa Paman tahu siapa yang memberikannya?", trust:+15, next:4},
+      {text:"Paman, apakah amplop itu berisi uang? Kenapa Ayah tidak pernah cerita?", trust:+10, next:5},
+    ]},
+    { text:"...*tertegun* Catatan? Ia meninggalkan catatan? *suara bergetar* Mungkin memang sudah waktunya kamu tahu.", choices:[
+      {text:"Aku siap, Paman. Ceritakan semuanya.", trust:+20, next:4},
+    ]},
+    { text:"*tersinggung* Tidak perlu nada seperti itu. Bicaralah dengan sopan.", choices:[
+      {text:"Maaf, Paman. Aku hanya bingung dan takut. Bisakah Paman bantu aku?", trust:+10, next:1},
+    ]},
+    { text:"Pak Budi Santoso. Kontraktor langganan dinas. Ia datang tiga kali selama proyek berlangsung. Setiap kali, pintu ruang kerja selalu ditutup. Tapi Ayah selalu membiarkan amplop itu masuk.", choices:[
+      {text:"Terima kasih, Paman. Ini sangat membantu.", trust:+5, next:'end_good'},
+    ]},
+    { text:"Pernah. Satu kali aku tanya soal mobil baru. Ayahmu jawab 'bonus kerja.' Tapi PNS biasa tidak dapat bonus sebesar itu. Itu semua terasa aneh.", choices:[
+      {text:"Terima kasih sudah jujur, Paman.", trust:+5, next:'end_good'},
+    ]},
+    { evidence:"Amplop dari kontraktor Pak Budi Santoso, diberikan tiga kali selama proyek jalan berlangsung. Semua amplop itu disembunyikan dalam laci kantor ayah.", text:"Ingat ini baik-baik, Raka. Ayahmu bukan orang jahat. Ia hanya... terperangkap oleh sistem yang sudah rusak jauh sebelum ia masuk ke dalamnya." }
+],
+  sari: [
+    { text:"Eh, Raka! Kamu pasti sedang banyak pikiran ya, nak. Ikhlaskan kepergian Bapak...", choices:[
+      {text:"Bu Sari, boleh aku tanya tentang Ayah... dan mobil yang sering Bu Sari lihat?", trust:+15, next:1},
+      {text:"Apakah Bu Sari pernah lihat sesuatu yang aneh di rumah kami dulu?", trust:+10, next:2},
+    ]},
+    { text:"*mengecilkan suara* Waktu proyek jalan itu, ada mobil hitam besar, plat luar kota, parkir hampir tiap malam. Ibu pikir tamu biasa... tapi lama-lama jadi curiga.", choices:[
+      {text:"Plat luar kota? Apa Bu Sari masih ingat dari mana?", trust:+20, next:3},
+      {text:"Berapa kali mobil itu datang, Bu?", trust:+15, next:4},
+    ]},
+    { text:"Ada orang-orang berpakaian rapi datang malam-malam. Setelah mereka pergi, lampu ruang kerja Bapakmu nyala sampai subuh. Ibu pernah lihat mereka keluar membawa tas kecil, bukan tas kerja biasa.", choices:[
+      {text:"Orang-orang itu... kira-kira siapa ya, Bu?", trust:+15, next:3},
+    ]},
+    { text:"Ibu tidak hafal nomornya. Tapi pernah dengar orang yang turun bilang 'proyek sudah beres, Pak'. Ibu kebetulan di teras malam itu.", choices:[
+      {text:"Itu sangat membantu, Bu Sari. Terima kasih banyak.", trust:+10, next:'end_good'},
+    ]},
+    { text:"Lebih dari sepuluh kali, Raka. Ibu sampai hafal suara mesinnya. Selalu malam, selalu pergi sebelum subuh.", choices:[
+      {text:"Terima kasih Bu Sari sudah mau cerita.", trust:+10, next:'end_good'},
+    ]},
+    { evidence:"Mobil hitam besar berplat luar kota datang lebih dari sepuluh kali di malam hari. Terdengar ucapan 'proyek sudah beres'. Setelah itu, lampu ruang kerja Ayah menyala sampai subuh.", text:"Raka, ibu doakan kamu kuat ya. Kalau memang ada yang tidak benar, ibu percaya kamu bisa menemukan jalannya." }
+],
+ dodi: [
+    { text:"*gugup, melihat kiri-kanan* Raka? Ada perlu apa kamu ke sini? Ini... ini tidak tepat waktunya.", choices:[
+      {text:"Pak Dodi, tenang. Aku hanya mau bicara. Aku tidak akan membuat masalah.", trust:+15, next:1},
+      {text:"Aku tahu Bapak tahu sesuatu tentang Ayah. Tolong bantu aku.", trust:+10, next:2},
+      {text:"Bapak kelihatan takut. Siapa yang membuat Bapak takut?", trust:-5, next:3},
+    ]},
+    { text:"...*berbisik* Ada orang yang mengawasi. Tapi pergi ke kantor lama, Raka. Ruang arsip lantai 2. Sebelum mereka musnahkan semuanya.", choices:[
+      {text:"Apa yang ada di ruang arsip itu, Pak?", trust:+20, next:4},
+      {text:"Siapa 'mereka', Pak Dodi?", trust:+15, next:5},
+    ]},
+    { text:"*menahan air mata* Ayahmu sebenarnya mau berhenti, Raka. Tapi mereka tidak biarkan. Dokumennya ada di kantor. Cepat, sebelum terlambat.", choices:[
+      {text:"Dokumen apa tepatnya, Pak?", trust:+20, next:4},
+    ]},
+    { text:"*wajah pucat* Kamu tidak mengerti betapa berbahayanya ini. Pergi. Lupakan saja.", choices:[
+      {text:"Pak, Ayah sendiri yang minta aku mengungkap ini. Aku tidak bisa mundur.", trust:+20, next:2},
+    ]},
+    { text:"RAB proyek jalan yang digelembungkan. Tanda tangan persetujuan. Nama-nama yang terlibat. Ayahmu menyimpannya sebagai perlindungan.", choices:[
+      {text:"Ayah berencana melaporkan ini?", trust:+15, next:6},
+    ]},
+    { text:"*gemetar* Budi Santoso dan beberapa pejabat di atasnya. Ini sudah berlangsung lama sebelum ayahmu masuk. Ia terjebak.", choices:[
+      {text:"Aku mengerti. Terima kasih, Pak Dodi.", trust:+5, next:'end_good'},
+    ]},
+    { text:"Ia sempat mau lapor ke inspektorat. Tapi malam sebelumnya, ada yang mengancam keluarganya.", choices:[
+      {text:"Terima kasih sudah jujur, Pak. Aku tidak akan lupakan ini.", trust:+5, next:'end_good'},
+    ]},
+    { evidence:"Pak Budi Santoso dan pejabat atasannya terlibat. Dokumen ada di ruang arsip lantai 2, akan segera dimusnahkan. Ayahmu mencoba melapor sebelum ancaman itu datang.", text:"*menelan ludah* Hati-hati, Raka. Dan jangan sebut nama aku di mana pun." }
+],
+  mama: [
+    { text:"Raka... *menyeka mata* Kamu kenapa belum istirahat? Sudah tengah malam.", choices:[
+      {text:"Mama, aku menemukan catatan dari Ayah di laci mejanya.", trust:+15, next:1},
+      {text:"Mama... aku tahu ada yang Mama sembunyikan. Aku tidak marah. Aku hanya ingin tahu.", trust:+20, next:2},
+      {text:"Mama, apakah Ayah pernah cerita tentang tekanan di pekerjaannya?", trust:+10, next:3},
+    ]},
+    { text:"*terdiam, wajah pucat* Catatan... *gemetar* Apa yang ia tulis di sana?", choices:[
+      {text:"'Raka, kalau kamu baca ini... maafkan Ayah. Tapi jangan biarkan ini berlanjut.'", trust:+25, next:4},
+    ]},
+    { text:"*menangis pelan* Mama tidak mau kamu terluka, Raka. Kamu anak satu-satunya.", choices:[
+      {text:"Aku sudah dewasa, Ma. Ayah sendiri yang minta aku tahu. Tolong percaya padaku.", trust:+20, next:4},
+    ]},
+    { text:"Pernah... sering. Ia sering tidak tidur. Kadang menangis sendiri di ruang kerja.", choices:[
+      {text:"Mama pernah lihat Ayah dengan dokumen-dokumen penting di rumah?", trust:+15, next:5},
+    ]},
+    { text:"*menangis* Sebelum meninggal, ia bilang 'Ma, kalau terjadi sesuatu, jagalah amplop di lemari bawah baju.'", choices:[
+      {text:"Amplop itu... masih ada, Ma?", trust:+20, next:6},
+    ]},
+    { text:"*mengambil kunci dari laci* Ayah bilang, 'jangan buka kecuali terpaksa.' Tapi Ayah juga pernah memberikan kunci untuk masuk ke kantor lama. Aku rasa ini saatnya kamu pergi ke sana.", choices:[
+      {text:"Mama, boleh aku masuk ke kantor Ayah?", trust:+15, next:6},
+    ]},
+    { text:"*menyerahkan kunci dan amplop cokelat* Ini... Mama simpan sejak dua tahun lalu. Kunci itu untuk pintu belakang kantor. *serahkan ke Raka* Ayahmu sayang kamu sangat, Raka.", choices:[
+      {text:"*memeluk Mama* Terima kasih, Ma. Aku janji akan lakukan ini dengan benar.", trust:+10, next:'end_good'},
+    ]},
+    { evidence:"Kunci untuk pintu belakang kantor ayah dan amplop cokelat berisi dokumen yang Ayah sembunyikan selama dua tahun — menunggu saat yang tepat.", text:"*terisak* Kamu sudah besar, Raka. Ayah pasti bangga. Hati-hati ya, nak." }
+]
+};
+
+// ══════════════════════════════════════
+//  DIALOGUE ENGINE
+// ══════════════════════════════════════
+let currentNPC = null;
+let currentTrust = 0;
+
+function startDialogue(npcId) {
+  if (state.dialogueActive) return;
+  const dx = state.playerX - npcData[npcId].x;
+  const dy = state.playerY - npcData[npcId].y;
+  if (Math.hypot(dx, dy) > 140) return;
+
+  state.dialogueActive = true;
+  currentNPC = npcId;
+  currentTrust = npcData[npcId].trust;
+
+  const npc = npcData[npcId];
+  document.getElementById('speaker-portrait-img').src = npc.portrait;
+  document.getElementById('speaker-name').textContent = npc.name;
+  document.getElementById('speaker-role').textContent = npc.role;
+  updateTrustBar();
+  renderStep(dialogues[npcId][0]);
+  document.getElementById('dialogue-overlay').classList.add('show');
+}
+
+function renderStep(step) {
+  document.getElementById('dialogue-text').textContent = step.text;
+  const choicesEl = document.getElementById('dialogue-choices');
+  const evidenceEl = document.getElementById('dialogue-evidence');
+  const continueBtn = document.getElementById('continue-btn');
+  choicesEl.innerHTML = '';
+  evidenceEl.style.display = 'none';
+  continueBtn.style.display = 'none';
+
+  if (step.evidence) {
+    evidenceEl.style.display = 'block';
+    document.getElementById('evidence-found-text').textContent = step.evidence;
+    continueBtn.style.display = 'block';
+    markSpoken(currentNPC);
+    return;
+  }
+  if (step.choices) {
+    step.choices.forEach((c, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.innerHTML = `<span class="choice-num">[${i+1}]</span><span>${c.text}</span>`;
+      btn.onclick = () => handleChoice(c);
+      choicesEl.appendChild(btn);
+    });
+  }
+}
+
+function handleChoice(choice) {
+  currentTrust = Math.min(100, Math.max(0, currentTrust + (choice.trust || 0)));
+  updateTrustBar();
+  if (choice.next === 'end_good') {
+    const ev = dialogues[currentNPC].find(s => s.evidence);
+    if (ev) renderStep(ev);
+    return;
+  }
+  const next = dialogues[currentNPC][choice.next];
+  if (next) renderStep(next);
+}
+
+function updateTrustBar() {
+  document.getElementById('trust-bar-fill').style.width = currentTrust + '%';
+}
+
+function markSpoken(id) {
+  if (state.npcSpoken[id]) return;
+  state.npcSpoken[id] = true;
+  state.completedCount++;
+
+  document.getElementById('npc-' + id).classList.add('spoken');
+  document.getElementById('npc-' + id).querySelector('.npc-bubble').textContent = '✓';
+
+  const taskMap = {hendra:'task-hendra', sari:'task-sari', dodi:'task-dodi', mama:'task-mama'};
+  const evMap   = {hendra:'ev1', sari:'ev2', dodi:'ev3', mama:'ev4'};
+  const t = document.getElementById(taskMap[id]);
+  if (t) { t.classList.remove('active'); t.classList.add('done'); t.querySelector('.mission-check').textContent = '✓'; }
+  const e = document.getElementById(evMap[id]);
+  if (e) e.classList.add('found');
+
+  updateProgress(); setNextActive();
+  if (state.completedCount >= 4) setTimeout(showComplete, 1500);
+}
+
+function setNextActive() {
+  ['hendra','sari','dodi','mama'].forEach(id => {
+    if (!state.npcSpoken[id]) {
+      const el = document.getElementById('task-' + id);
+      if (el && !el.classList.contains('active') && !el.classList.contains('done')) el.classList.add('active');
+    }
+  });
+}
+
+function updateProgress() {
+  const c = state.completedCount;
+  document.getElementById('progress-text').textContent = `${c} / 4 Selesai`;
+  document.getElementById('progress-bar').style.width = (c / 4 * 100) + '%';
+}
+
+function closeDialogue() {
+  document.getElementById('dialogue-overlay').classList.remove('show');
+  state.dialogueActive = false;
+  currentNPC = null;
+}
+
+function showComplete() {
+  document.getElementById('chapter-complete').classList.add('show');
+}
+
+// ══════════════════════════════════════
+//  PLAYER ANIMATION
+// ══════════════════════════════════════
+function updatePlayerSprite(dx, dy) {
+  const img = document.getElementById('player-img');
+  const isMoving = dx !== 0 || dy !== 0;
+  state.walking = isMoving;
+
+  if (!isMoving) {
+    img.style.transform = '';
+    img.src = './asset/char/down.png';
+    return;
+  }
+
+  // Determine direction
+  if (Math.abs(dy) > Math.abs(dx) && dy < 0) {
+    state.facing = 'back';
+  } else if (dx < 0) {
+    state.facing = 'left';
+  } else {
+    state.facing = 'right';
+  }
+
+  // Walk cycle timer
+  state.walkTimer++;
+  if (state.walkTimer >= 8) {
+    state.walkTimer = 0;
+    state.walkFrame = (state.walkFrame + 1) % 4;
+  }
+
+  const frames = ['./asset/char/walk1.png','./asset/char/walk2.png','./asset/char/walk3.png','./asset/char/walk4.png'];
+  if (state.facing === 'back') {
+    img.src = './asset/char/down.png';
+    img.style.transform = '';
+  } else {
+    img.src = frames[state.walkFrame];
+    img.style.transform = state.facing === 'left' ? 'scaleX(-1)' : '';
+  }
+}
+
+// ══════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════
+function gameLoop() {
+  if (!state.dialogueActive) {
+    let dx = 0, dy = 0;
+    if (state.keys['w'] || state.keys['arrowup'])    dy -= state.speed;
+    if (state.keys['s'] || state.keys['arrowdown'])  dy += state.speed;
+    if (state.keys['a'] || state.keys['arrowleft'])  dx -= state.speed;
+    if (state.keys['d'] || state.keys['arrowright']) dx += state.speed;
+    if (dx !== 0 && dy !== 0) { dx *= 0.707; dy *= 0.707; }
+
+    state.playerX = Math.max(30, Math.min(WORLD_W - 30, state.playerX + dx));
+    state.playerY = Math.max(40, Math.min(WORLD_H - 40, state.playerY + dy));
+
+    updatePlayerSprite(dx, dy);
+
+    const pl = document.getElementById('player');
+    pl.style.left = (state.playerX - 28) + 'px';
+    pl.style.top  = (state.playerY - 68) + 'px';
+
+    // Camera smooth follow
+    VIEW_W = window.innerWidth; VIEW_H = window.innerHeight;
+    const targetX = Math.max(0, Math.min(WORLD_W - VIEW_W, state.playerX - VIEW_W / 2));
+    const targetY = Math.max(0, Math.min(WORLD_H - VIEW_H, state.playerY - VIEW_H / 2));
+    state.worldOffX += (targetX - state.worldOffX) * 0.12;
+    state.worldOffY += (targetY - state.worldOffY) * 0.12;
+    document.getElementById('world').style.transform =
+      `translate(${-Math.round(state.worldOffX)}px, ${-Math.round(state.worldOffY)}px)`;
+
+    // NPC proximity
+    let nearest = null, nearDist = 120;
+    for (const [id, npc] of Object.entries(npcData)) {
+      const dist = Math.hypot(state.playerX - npc.x, state.playerY - npc.y);
+      const el = document.getElementById('npc-' + id);
+      if (!state.npcSpoken[id]) {
+        if (dist < 100) el.classList.add('nearby'); else el.classList.remove('nearby');
+        if (dist < nearDist) { nearest = id; nearDist = dist; }
+      }
+    }
+    if (nearest !== state.nearNPC) {
+      state.nearNPC = nearest;
+      const hint = document.getElementById('hint-box');
+      if (nearest) { hint.textContent = `[ E ] Ajak bicara ${npcData[nearest].name}`; hint.classList.add('show'); }
+      else hint.classList.remove('show');
+    }
+  }
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+// ══════════════════════════════════════
+//  INPUT
+// ══════════════════════════════════════
+document.addEventListener('keydown', e => {
+  state.keys[e.key.toLowerCase()] = true;
+  if ((e.key === 'e' || e.key === 'E') && state.nearNPC && !state.dialogueActive) {
+    startDialogue(state.nearNPC);
+  }
+  if (e.key === 'Escape' && state.dialogueActive) closeDialogue();
+});
+document.addEventListener('keyup', e => { state.keys[e.key.toLowerCase()] = false; });
+
+// ══════════════════════════════════════
+//  UI HELPERS
+// ══════════════════════════════════════
+function toggleNotes() {
+  state.notesOpen = !state.notesOpen;
+  document.getElementById('notes-body').style.display = state.notesOpen ? 'block' : 'none';
+  document.getElementById('notes-toggle').textContent = state.notesOpen ? '▲' : '▼';
+}
+
+function goBack() {
+  if (confirm('Kembali ke menu utama? Progress tidak tersimpan.'))
+    window.location.href = 'menu.html';
+}
+function returnToMenu() { window.location.href = 'menu.html'; }
+function nextChapter() { window.location.href = 'chapter2.html'; }
+</script>
+</body>
+</html>

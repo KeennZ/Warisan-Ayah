@@ -1,0 +1,217 @@
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+.wrap{background:#000;overflow:hidden;width:100%;height:100vh;min-height:600px;position:relative;font-family:Georgia,serif}
+.stage{position:absolute;inset:0}
+.slide{position:absolute;inset:0;opacity:0;transition:opacity 1.6s ease}
+.slide.active{opacity:1}
+.slide img{width:100%;height:100%;object-fit:cover}
+.slide.active.kb1 img{animation:kb1 5s ease-in-out forwards}
+.slide.active.kb2 img{animation:kb2 5s ease-in-out forwards}
+.slide.active.kb3 img{animation:kb3 5s ease-in-out forwards}
+.slide.active.kb4 img{animation:kb4 5s ease-in-out forwards}
+.slide.active.kb5 img{animation:kb5 5s ease-in-out forwards}
+.slide.active.kb6 img{animation:kb6 5s ease-in-out forwards}
+.slide.active.kb7 img{animation:kb7 5s ease-in-out forwards}
+.slide.active.kb8 img{animation:kb8 5s ease-in-out forwards}
+@keyframes kb1{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.1) translate(-2%,-2%)}}
+@keyframes kb2{0%{transform:scale(1.08) translate(2%,0)}100%{transform:scale(1) translate(0,2%)}}
+@keyframes kb3{0%{transform:scale(1) translate(-1%,0)}100%{transform:scale(1.1) translate(2%,-1%)}}
+@keyframes kb4{0%{transform:scale(1.06) translate(0,2%)}100%{transform:scale(1) translate(-2%,0)}}
+@keyframes kb5{0%{transform:scale(1) translate(2%,1%)}100%{transform:scale(1.1) translate(-1%,-2%)}}
+@keyframes kb6{0%{transform:scale(1.08) translate(-2%,-1%)}100%{transform:scale(1) translate(1%,1%)}}
+@keyframes kb7{0%{transform:scale(1) translate(0,0)}100%{transform:scale(1.1) translate(2%,2%)}}
+@keyframes kb8{0%{transform:scale(1.06) translate(1%,1%)}100%{transform:scale(1) translate(-2%,-1%)}}
+
+.vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 35%,rgba(0,0,0,0.65) 100%);z-index:2;pointer-events:none}
+.top-fade{position:absolute;top:0;left:0;right:0;height:160px;background:linear-gradient(rgba(0,0,0,0.7),transparent);z-index:3;pointer-events:none}
+.bottom-fade{position:absolute;bottom:0;left:0;right:0;height:220px;background:linear-gradient(transparent,rgba(0,0,0,0.97));z-index:3;pointer-events:none}
+
+.header{position:absolute;top:0;left:0;right:0;z-index:5;padding:28px 36px 0;display:flex;align-items:flex-start;justify-content:space-between}
+.game-eyebrow{font-size:10px;letter-spacing:5px;color:#c8860a;text-transform:uppercase;opacity:0.8;margin-bottom:6px}
+.game-title{font-size:clamp(22px,4vw,38px);font-weight:500;color:#f0e0c0;letter-spacing:2px;line-height:1.1}
+.top-right{display:flex;flex-direction:column;align-items:flex-end;gap:12px}
+.slide-counter{font-size:11px;letter-spacing:3px;color:rgba(200,134,10,0.6)}
+
+.skip-btn{background:rgba(0,0,0,0.45);border:1px solid rgba(200,134,10,0.4);color:#c8860a;padding:7px 18px;font-size:10px;letter-spacing:3px;text-transform:uppercase;cursor:pointer;font-family:Georgia,serif;border-radius:2px;transition:all 0.2s;white-space:nowrap}
+.skip-btn:hover{background:rgba(200,134,10,0.2);border-color:#c8860a;letter-spacing:4px}
+
+.bottom-ui{position:absolute;bottom:0;left:0;right:0;z-index:5;padding:0 36px 28px}
+.chapter-tag{font-size:10px;letter-spacing:4px;color:#c8860a;text-transform:uppercase;margin-bottom:8px;opacity:0;transition:opacity 0.6s ease}
+.chapter-tag.show{opacity:1}
+.slide-title{font-size:clamp(18px,3vw,30px);font-weight:500;color:#f0e0c0;letter-spacing:1px;line-height:1.2;margin-bottom:20px;opacity:0;transform:translateY(8px);transition:opacity 0.6s ease 0.15s,transform 0.6s ease 0.15s}
+.slide-title.show{opacity:1;transform:translateY(0)}
+
+.controls{display:flex;align-items:center;gap:16px}
+.nav-btn{background:rgba(0,0,0,0.4);border:1px solid rgba(200,134,10,0.35);color:#c8860a;width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0}
+.nav-btn:hover{background:rgba(200,134,10,0.2);border-color:#c8860a}
+.dots{display:flex;gap:7px;align-items:center}
+.dot{width:5px;height:5px;border-radius:50%;background:rgba(200,134,10,0.25);cursor:pointer;transition:all 0.3s}
+.dot.active{background:#c8860a;transform:scale(1.5)}
+.progress-bar{position:absolute;bottom:0;left:0;height:2px;background:#c8860a;z-index:6;width:0%}
+
+.outro{position:absolute;inset:0;background:#000;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity 1.2s ease}
+.outro.show{opacity:1;pointer-events:all}
+.outro-eyebrow{font-size:10px;letter-spacing:6px;color:#c8860a;text-transform:uppercase;margin-bottom:16px;opacity:0.8}
+.outro-title{font-size:clamp(20px,4vw,36px);font-weight:500;color:#f0e0c0;letter-spacing:2px;text-align:center;line-height:1.3;margin-bottom:32px}
+.outro-btn{background:transparent;border:1px solid rgba(200,134,10,0.6);color:#c8860a;padding:12px 36px;font-size:11px;letter-spacing:4px;text-transform:uppercase;cursor:pointer;font-family:Georgia,serif;transition:all 0.3s}
+.outro-btn:hover{background:rgba(200,134,10,0.15);border-color:#c8860a;letter-spacing:6px}
+.outro-line{width:80px;height:1px;background:rgba(200,134,10,0.3);margin-bottom:32px}
+</style>
+
+
+
+<div class="wrap">
+  <div class="stage" id="stage">
+    <div class="slide kb1 active" data-chapter="Prolog" data-title="Hari yang mengubah segalanya">
+      <img src="./asset/story/1.png" alt="Pemakaman Ayah">
+    </div>
+    <div class="slide kb2" data-chapter="Bab I" data-title="Warisan yang tak masuk akal">
+      <img src="./asset/story/2.png" alt="Rumah Besar">
+    </div>
+    <div class="slide kb3" data-chapter="Bab I" data-title="Mobil yang tidak pernah ada">
+      <img src="./asset/story/3.png" alt="Mobil Mewah">
+    </div>
+    <div class="slide kb4" data-chapter="Bab II" data-title="Ruang kerja yang menyimpan rahasia">
+      <img src="./asset/story/4.png" alt="Ruang Kerja Gelap">
+    </div>
+    <div class="slide kb5" data-chapter="Bab II" data-title="Laci terakhir">
+      <img src="./asset/story/5.png" alt="Laci Tersembunyi">
+    </div>
+    <div class="slide kb6" data-chapter="Bab II" data-title="Pesan yang tidak pernah selesai">
+      <img src="./asset/story/6.png" alt="Surat Ayah">
+    </div>
+    <div class="slide kb7" data-chapter="Bab III" data-title="Rekening yang seharusnya tidak ada">
+      <img src="./asset/story/7.png" alt="Rekening Bank">
+    </div>
+    <div class="slide kb8" data-chapter="Bab III" data-title="Raka harus mencari jawabannya">
+      <img src="./asset/story/8.png" alt="Raka Membaca">
+    </div>
+  </div>
+
+  <div class="vignette"></div>
+  <div class="top-fade"></div>
+  <div class="bottom-fade"></div>
+
+  <div class="header">
+    <div>
+      <div class="game-eyebrow">&#9658; investigasi kasus ayahanda</div>
+      <div class="game-title">Warisan<br>dalam Kegelapan</div>
+    </div>
+    <div class="top-right">
+      <div class="slide-counter" id="slideCounter">01 / 08</div>
+      <button class="skip-btn" id="skipBtn">Lewati &#8250;&#8250;</button>
+    </div>
+  </div>
+
+  <div class="bottom-ui">
+    <div class="chapter-tag show" id="chapterTag">Prolog</div>
+    <div class="slide-title show" id="slideTitle">Hari yang mengubah segalanya</div>
+    <div class="controls">
+      <button class="nav-btn" id="prevBtn" aria-label="Sebelumnya">&#8249;</button>
+      <div class="dots" id="dots"></div>
+      <button class="nav-btn" id="nextBtn" aria-label="Selanjutnya">&#8250;</button>
+    </div>
+  </div>
+
+  <div class="progress-bar" id="progressBar"></div>
+
+  <div class="outro" id="outro">
+    <div class="outro-eyebrow">&#9670; cerita dimulai &#9670;</div>
+    <div class="outro-title">Kebenaran menunggumu<br>di balik kegelapan ini.</div>
+    <div class="outro-line"></div>
+    <button class="outro-btn" id="outroBtn">Mulai Investigasi &#8250;</button>
+  </div>
+</div>
+
+<script>
+const NEXT_PAGE = 'menu.html';
+
+const slides = document.querySelectorAll('.slide');
+const dotsEl = document.getElementById('dots');
+const bar = document.getElementById('progressBar');
+const chapterTag = document.getElementById('chapterTag');
+const slideTitle = document.getElementById('slideTitle');
+const counter = document.getElementById('slideCounter');
+const outro = document.getElementById('outro');
+const total = slides.length;
+let current = 0;
+let timer = null;
+const DURATION = 5000;
+
+slides.forEach((_,i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i===0?' active':'');
+  d.addEventListener('click', () => goTo(i));
+  dotsEl.appendChild(d);
+});
+
+function pad(n){ return n < 10 ? '0'+n : ''+n; }
+
+function updateInfo(idx){
+  chapterTag.classList.remove('show');
+  slideTitle.classList.remove('show');
+  setTimeout(() => {
+    chapterTag.textContent = slides[idx].dataset.chapter;
+    slideTitle.textContent = slides[idx].dataset.title;
+    counter.textContent = pad(idx+1) + ' / ' + pad(total);
+    chapterTag.classList.add('show');
+    slideTitle.classList.add('show');
+  }, 300);
+}
+
+function updateDots(){
+  document.querySelectorAll('.dot').forEach((d,i) => {
+    d.className = 'dot' + (i===current?' active':'');
+  });
+}
+
+function animateBar(){
+  bar.style.transition = 'none';
+  bar.style.width = '0%';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    bar.style.transition = 'width ' + DURATION + 'ms linear';
+    bar.style.width = '100%';
+  }));
+}
+
+function showOutro(){
+  clearInterval(timer);
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  setTimeout(() => { outro.classList.add('show'); }, 600);
+}
+
+function navigate(){
+  outro.style.transition = 'opacity 0.8s ease';
+  outro.style.opacity = '0';
+  setTimeout(() => { window.location.href = NEXT_PAGE; }, 850);
+}
+
+function goTo(idx, auto){
+  const next = (idx + total) % total;
+  if(auto && current === total - 1 && idx === total){
+    showOutro();
+    return;
+  }
+  slides[current].classList.remove('active');
+  current = next;
+  slides[current].classList.add('active');
+  updateDots();
+  updateInfo(current);
+  animateBar();
+  clearInterval(timer);
+  timer = setInterval(() => goTo(current + 1, true), DURATION);
+}
+
+document.getElementById('prevBtn').addEventListener('click', () => goTo(current - 1, false));
+document.getElementById('nextBtn').addEventListener('click', () => {
+  if(current === total - 1){ showOutro(); return; }
+  goTo(current + 1, false);
+});
+document.getElementById('skipBtn').addEventListener('click', showOutro);
+document.getElementById('outroBtn').addEventListener('click', navigate);
+
+animateBar();
+timer = setInterval(() => goTo(current + 1, true), DURATION);
+</script>

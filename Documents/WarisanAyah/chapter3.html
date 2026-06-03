@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Chapter 3 - Cocokkan Dokumen Rapi</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Old+Standard+TT&display=swap');
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0; padding: 0;
+  background: #1a1a1a;
+  font-family: 'Old Standard TT', serif;
+  color: #dbb089;
+  min-height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 35px 20px 80px;
+}
+header {
+  width: 100%;
+  max-width: 1200px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: flex-end;
+}
+header button {
+  background: none;
+  border: 2px solid #d9ad7c;
+  color: #dbb089;
+  font-weight: 700;
+  padding: 10px 24px;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Old Standard TT', serif;
+  user-select: none;
+}
+header button:hover {
+  background: #d9ad7c;
+  color: #3f2f1f;
+  box-shadow: 0 0 12px #d9ad7c;
+}
+
+/* Baris dokumen warga & kantor — setiap panel punya judul sendiri di atas */
+.doc-row {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: center;
+  gap: 42px;
+  margin-bottom: 40px;
+}
+
+.doc-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.title-box {
+  color: #cfa768;
+  text-shadow: 0 0 8px #a57836;
+  font-weight: 900;
+  font-size: 22px;
+  letter-spacing: 1px;
+  border-bottom: 2px solid #a57836;
+  padding-bottom: 6px;
+  width: 100%;
+  text-align: center;
+}
+
+.doc-panel {
+  background: #2c1e0f;
+  border: 3px solid #7e5b34;
+  border-radius: 14px;
+  padding: 30px 25px 35px 25px;
+  box-shadow: 0 0 30px #9c7a40aa inset;
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  min-width: 350px;
+}
+
+.document {
+  width: 110px;
+  min-height: 160px;
+  background: #f3ecd7;
+  border: 3px solid #a67c23;
+  box-shadow: 3px 7px 10px rgba(0,0,0,0.8);
+  border-radius: 6px;
+  padding: 16px 14px 20px 14px;
+  cursor: grab;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  color: #5c4414;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: left;
+  user-select: none;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  font-family: 'Old Standard TT', serif;
+}
+.document:active {
+  cursor: grabbing;
+  transform: scale(1.05);
+  box-shadow: 6px 12px 25px rgba(0,0,0,0.9);
+  z-index: 999;
+}
+.matched {
+  border-color: #556b2f !important;
+  background: #d6e1b8;
+  color: #37450f;
+  box-shadow: 0 0 18px #94a83d;
+  cursor: default !important;
+}
+.doc-icon {
+  font-size: 45px;
+  margin-bottom: 12px;
+  text-align: center;
+  filter: drop-shadow(1px 1px 1px #9c7a36);
+}
+.doc-title {
+  font-weight: 900;
+  margin-bottom: 8px;
+  font-size: 15px;
+}
+.doc-desc {
+  font-weight: normal;
+  font-size: 12px;
+  line-height: 1.25;
+  opacity: 0.8;
+}
+
+/* Wrapper scroll untuk match zone */
+.match-scroll-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  max-height: 320px;
+  overflow-y: auto;
+  border-radius: 12px;
+  padding-bottom: 10px;
+  /* scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: #a67c23 #2c1e0f;
+}
+.match-scroll-wrapper::-webkit-scrollbar {
+  width: 7px;
+}
+.match-scroll-wrapper::-webkit-scrollbar-track {
+  background: #2c1e0f;
+  border-radius: 8px;
+}
+.match-scroll-wrapper::-webkit-scrollbar-thumb {
+  background: #a67c23;
+  border-radius: 8px;
+}
+
+.match-zone {
+  width: 100%;
+  min-height: 230px;
+  background: rgba(243,236,215,0.15);
+  border: 3px dashed #a67c23;
+  border-radius: 12px;
+  box-shadow: inset 0 0 40px #a67c23aa;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #a67c23cc;
+  font-weight: 800;
+  font-size: 18px;
+  user-select: none;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  position: relative;
+  gap: 12px;
+  padding: 20px 16px;
+}
+.match-zone.active {
+  background-color: #f3ecd7cc;
+  border-color: #7e5b34;
+  color: #7e5b34dd;
+  box-shadow: inset 0 0 40px #7e5b3433, 0 0 18px #7e5b34cc;
+}
+.match-zone .zone-doc {
+  width: 160px;
+  min-height: 180px;
+  background: #f3ecd7;
+  border: 3px solid #a67c23;
+  border-radius: 6px;
+  padding: 14px 12px 14px 12px;
+  box-shadow: 3px 5px 12px rgba(0,0,0,0.8);
+  color: #5c4414;
+  font-weight: 600;
+  font-size: 13px;
+  user-select:none;
+  display:flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  cursor: default;
+  position: relative;
+}
+.zone-doc .doc-icon {
+  font-size: 38px;
+  margin-bottom: 8px;
+  filter: drop-shadow(1px 1px 1px #9c7a36);
+}
+.zone-doc .doc-title {
+  font-weight: 900;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.zone-doc .doc-desc {
+  font-weight: normal;
+  font-size: 11px;
+  opacity: 0.8;
+}
+.wrong-shake {
+  animation: shake 0.5s;
+  border-color: #d43f3f !important;
+  background-color: #f9d6d6 !important;
+  color: #7a2121 !important;
+}
+.wrong-message {
+  color: #d43f3f;
+  font-weight: 900;
+  font-size: 16px;
+  margin-top: 6px;
+  user-select:none;
+  height: 24px;
+  min-height: 24px;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.wrong-message.visible {
+  opacity: 1;
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0px); }
+  25% { transform: translateX(-6px);}
+  50% { transform: translateX(6px);}
+  75% { transform: translateX(-6px);}
+}
+.progress-wrapper {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  width: 420px;
+  height: 10px;
+  background-color: #332b18cc;
+  border-radius: 12px;
+  transform: translateX(-50%);
+  border: 2px solid #886622;
+  overflow: hidden;
+  box-shadow: 0 0 18px #886622aa inset;
+  max-width: 90vw;
+  z-index: 10;
+}
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #b79c45, #556b2f);
+  width: 0%;
+  transition: width 0.5s ease;
+  border-radius: 12px;
+}
+#completionOverlay {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(10,5,0,0.9);
+  color: #d9ad7c;
+  font-family: 'Old Standard TT', serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+  text-align: center;
+  padding: 0 20px;
+}
+#completionOverlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+#completionOverlay h2 {
+  font-size: 44px;
+  font-weight: 900;
+  margin-bottom: 24px;
+  text-shadow: 0 0 12px #a0832e88;
+  user-select: none;
+}
+#completionOverlay p {
+  font-size: 20px;
+  max-width: 500px;
+  margin-bottom: 40px;
+}
+#completionOverlay button {
+  background: #b29746;
+  border: none;
+  padding: 14px 30px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 18px;
+  color: #2f2505;
+  box-shadow: 0 0 18px #b29746aa;
+  user-select: none;
+  transition: background-color 0.3s ease;
+}
+#completionOverlay button:hover {
+  background: #726123;
+  color: #d9ad7c;
+  box-shadow: 0 0 28px #726123bb;
+}
+
+/* hint scroll */
+.scroll-hint {
+  font-size: 12px;
+  color: #a67c23aa;
+  letter-spacing: 1px;
+  margin-top: 8px;
+  text-align: center;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+</style>
+</head>
+<body>
+<header>
+    <button id="btnMenu">Kembali Menu</button>
+</header>
+
+<main style="width:100%; max-width:1200px; display:flex; flex-direction:column; align-items:center; gap:0;">
+
+  <!-- Dua kolom: Dokumen Warga & Dokumen Kantor, masing-masing punya judul sendiri di atas -->
+  <div class="doc-row">
+
+    <div class="doc-column">
+      <div class="title-box">clue</div>
+      <section class="doc-panel" id="witnessDocs">
+        <div class="document" id="witness-1" draggable="true" data-match="1">
+          <div class="doc-icon">🗃️</div>
+          <div class="doc-title">Map Merah</div>
+          <div class="doc-desc">Dari kontraktor Pak Budi Santoso</div>
+        </div>
+        <div class="document" id="witness-2" draggable="true" data-match="2">
+          <div class="doc-icon">💰</div>
+          <div class="doc-title">Rekapan Anggaran penting</div>
+          <div class="doc-desc">Mobil hitam plat luar kota</div>
+        </div>
+        <div class="document" id="witness-3" draggable="true" data-match="3">
+          <div class="doc-icon">💸</div>
+          <div class="doc-title">Transaksi Mencurigakan</div>
+          <div class="doc-desc">RAB fiktif</div>
+        </div>
+      </section>
+    </div>
+
+    <div class="doc-column">
+      <div class="title-box">Dokumen Kantor</div>
+      <section class="doc-panel" id="officeDocs">
+        <div class="document" id="office-1" draggable="true" data-match="1">
+          <div class="doc-icon">🏦</div>
+          <div class="doc-title">Transfer Swasta</div>
+          <div class="doc-desc">Rp 12M ke PT. Maju Jaya</div>
+        </div>
+        <div class="document" id="office-2" draggable="true" data-match="2">
+          <div class="doc-icon">📄</div>
+          <div class="doc-title">RAB Proyek Jalan</div>
+          <div class="doc-desc">40 Miliar - Disetujui Ayah</div>
+        </div>
+        <div class="document" id="office-3" draggable="true" data-match="3">
+          <div class="doc-icon">📊</div>
+          <div class="doc-title">RAB Revisi</div>
+          <div class="doc-desc">+25% markup</div>
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <!-- Match zone dengan scroll wrapper -->
+  <div class="match-scroll-wrapper">
+    <section class="match-zone" id="matchZone">
+      <div id="dropMsg" style="font-weight: 700; color: #a67c23; user-select:none;">Taruh Dokumen Warga dulu</div>
+      <div id="wrongMsg" class="wrong-message"></div>
+    </section>
+  </div>
+  <div class="scroll-hint">↓ scroll untuk lihat dokumen yang sudah dicocokkan</div>
+
+</main>
+
+<div class="progress-wrapper"><div class="progress-bar" id="progressBar"></div></div>
+
+<div id="completionOverlay">
+    <h2>BERHASIL</h2>
+    <p>Dokumen cocok semua. Pola korupsi terungkap.<br>"Ayah... kenapa?"</p>
+    <button id="btnNextChapter">Lanjut ke Chapter 4</button>
+</div>
+
+<script>
+const witnessDocs = document.querySelectorAll('#witnessDocs .document');
+const officeDocs = document.querySelectorAll('#officeDocs .document');
+const matchZone = document.getElementById('matchZone');
+const dropMsg = document.getElementById('dropMsg');
+const wrongMsg = document.getElementById('wrongMsg');
+const progressBar = document.getElementById('progressBar');
+const completionOverlay = document.getElementById('completionOverlay');
+const btnNextChapter = document.getElementById('btnNextChapter');
+const btnMenu = document.getElementById('btnMenu');
+
+let step = 0; 
+let currentWitnessDoc = null;
+let currentOfficeDoc = null;
+const matched = new Set();
+
+function allowDragOn(elements) {
+    elements.forEach(elem => {
+        elem.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text/plain', elem.id);
+            setTimeout(() => { elem.style.display = 'none'; }, 0);
+        });
+        elem.addEventListener('dragend', e => { elem.style.display = 'flex'; });
+    });
+}
+allowDragOn(witnessDocs);
+allowDragOn(officeDocs);
+
+matchZone.addEventListener('dragover', e => {
+    e.preventDefault();
+    matchZone.classList.add('active');
+});
+matchZone.addEventListener('dragleave', e => { matchZone.classList.remove('active'); });
+matchZone.addEventListener('drop', e => {
+    e.preventDefault();
+    matchZone.classList.remove('active');
+    const id = e.dataTransfer.getData('text/plain');
+    const elem = document.getElementById(id);
+    if(!elem) return;
+
+    if(matched.has(elem.dataset.match)) {
+        showTempWrong('Dokumen sudah cocok!');
+        return;
+    }
+
+    if(step === 0 && elem.id.startsWith('witness')) {
+        currentWitnessDoc = elem;
+        showInMatchZone(currentWitnessDoc);
+        step = 1;
+        dropMsg.textContent = "Taruh dokumen kantor untuk cocokkan";
+        wrongMsg.classList.remove('visible');
+    } 
+    else if (step === 1 && elem.id.startsWith('office')) {
+        currentOfficeDoc = elem;
+        showInMatchZone(currentOfficeDoc);
+        checkMatch();
+    } 
+    else if(step === 0 && elem.id.startsWith('office')){
+        showTempWrong('Tunggu dokumen warga dulu!');
+    }
+    else if(step === 1 && elem.id.startsWith('witness')){
+        showTempWrong('Tunggu dokumen kantor dulu!');
+    }
+});
+
+function showInMatchZone(doc) {
+    [...matchZone.querySelectorAll('.zone-doc')].forEach(d => d.remove());
+    const clone = doc.cloneNode(true);
+    clone.classList.add('zone-doc');
+    clone.style.cursor = 'default';
+    clone.style.position = 'static';
+    clone.style.width = '160px';
+    clone.style.minHeight = '180px';
+    clone.style.display = 'flex';
+    clone.style.flexDirection = 'column';
+    clone.style.justifyContent = 'flex-start';
+    clone.style.margin = '5px auto';
+    clone.draggable = false;
+    matchZone.appendChild(clone);
+    // scroll ke bawah biar bisa liat dokumen yang baru masuk
+    matchZone.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function checkMatch() {
+    if(!currentWitnessDoc || !currentOfficeDoc) return;
+
+    if(currentWitnessDoc.dataset.match === currentOfficeDoc.dataset.match) {
+        currentWitnessDoc.classList.add('matched');
+        currentOfficeDoc.classList.add('matched');
+        matched.add(currentWitnessDoc.dataset.match);
+
+        dropMsg.textContent = "Dokumen cocok! Taruh dokumen warga berikutnya";
+        wrongMsg.classList.remove('visible');
+
+        currentWitnessDoc = null;
+        currentOfficeDoc = null;
+        step = 0;
+        updateProgress();
+
+        setTimeout(() => { 
+            [...matchZone.querySelectorAll('.zone-doc')].forEach(d => d.remove());
+        }, 1200);
+
+        if(matched.size === 3){
+            setTimeout(() => { completionOverlay.classList.add('visible'); }, 1400);
+        }
+    } else {
+        showTempWrong('Dokumen tidak cocok!');
+        shakeElement(matchZone);
+        currentOfficeDoc = null;
+    }
+}
+
+function showTempWrong(msg) {
+    wrongMsg.textContent = msg;
+    wrongMsg.classList.add('visible');
+    setTimeout(() => { wrongMsg.classList.remove('visible'); }, 1800);
+}
+function shakeElement(elem) {
+    elem.classList.add('wrong-shake');
+    setTimeout(() => { elem.classList.remove('wrong-shake'); }, 600);
+}
+
+function updateProgress() {
+    progressBar.style.width = (matched.size/3*100) + '%';
+}
+
+
+btnNextChapter.addEventListener('click', () => { window.location.href = 'chapter4.html'; });
+btnMenu.addEventListener('click', () => {
+    if(confirm('Kembali ke menu? Progress akan hilang.')) { window.location.href = 'menu.html'; }
+});
+</script>
+</body>
+</html>

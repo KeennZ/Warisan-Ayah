@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chapter 4 — Pilihan Raka</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Special+Elite&family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  --gold:#c9a84c; --gold-dim:#7a6230;
+  --paper:#f0e6cc; --paper-mid:#d4c4a0; --paper-dk:#b8a882;
+  --ink:#1a1208; --text:#e8dcc8; --text-dim:#a09070;
+}
+
+body { 
+  font-family:'Crimson Text',serif; 
+  color:var(--text); 
+  min-height:100vh; 
+  overflow-x:hidden; 
+  background:#0d0b08; 
+}
+
+/* ── BG LAYERS ── */
+#bg-canvas { position:fixed; inset:0; z-index:0; pointer-events:none; }
+#win-shadow { position:fixed; inset:0; z-index:1; pointer-events:none; background:repeating-linear-gradient(172deg,transparent 0,transparent 42px,rgba(0,0,0,0.17) 42px,rgba(0,0,0,0.17) 55px); }
+#lamp-glow  { position:fixed; top:-60px; left:50%; transform:translateX(-50%); width:800px; height:480px; pointer-events:none; z-index:1; background:radial-gradient(ellipse at 50% 0%,rgba(201,160,55,0.13) 0%,rgba(180,130,40,0.05) 42%,transparent 70%); }
+#vignette   { position:fixed; inset:0; z-index:2; pointer-events:none; background:radial-gradient(ellipse at 50% 45%,transparent 28%,rgba(0,0,0,0.52) 65%,rgba(0,0,0,0.9) 100%); }
+#vignette::after { content:''; position:absolute; inset:0; background:linear-gradient(to bottom,rgba(0,0,0,0.55) 0%,transparent 22%,transparent 75%,rgba(0,0,0,0.68) 100%); }
+#grain      { position:fixed; inset:0; z-index:3; pointer-events:none; opacity:0.32; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"); }
+
+/* ── PAGE CONTENT ── */
+.pg { position:relative; z-index:10; }
+
+/* HEADER */
+.hdr { text-align:center; padding:56px 20px 34px; }
+.hdr-label { font-family:'Special Elite',cursive; font-size:12px; letter-spacing:7px; color:var(--gold-dim); text-transform:uppercase; margin-bottom:14px; opacity:0; animation:fadeUp .8s ease forwards .2s; }
+.hdr-title  { font-family:'Playfair Display',serif; font-weight:900; font-size:clamp(40px,7vw,80px); color:var(--gold); line-height:1; margin-bottom:10px; opacity:0; animation:fadeUp .8s ease forwards .4s; }
+.hdr-sub    { font-family:'IM Fell English',serif; font-style:italic; font-size:clamp(14px,2vw,17px); color:var(--text-dim); margin-bottom:26px; opacity:0; animation:fadeUp .8s ease forwards .6s; }
+.gold-hr    { width:110px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:0 auto 20px; opacity:0; animation:fadeIn 1s ease forwards .8s; }
+.hdr-intro  { max-width:580px; margin:0 auto; font-size:17px; line-height:1.85; color:var(--text-dim); font-style:italic; opacity:0; animation:fadeUp .8s ease forwards 1s; }
+
+/* STICKY */
+.sticky-wrap { max-width:680px; margin:0 auto 44px; padding:0 20px; opacity:0; animation:fadeUp .8s ease forwards 1.15s; }
+.sticky { background:linear-gradient(135deg,#d4b05a,#c49a38 50%,#d4b05a); padding:22px 28px; position:relative; border-radius:2px; box-shadow:3px 4px 14px rgba(0,0,0,0.65),inset 0 1px 0 rgba(255,255,255,0.12); transform:rotate(-1.4deg); }
+.sticky::before { content:''; position:absolute; top:-9px; left:50%; transform:translateX(-50%); width:44px; height:18px; background:rgba(200,158,52,0.6); box-shadow:0 2px 5px rgba(0,0,0,0.35); }
+.sticky p { font-family:'Special Elite',cursive; font-size:14px; color:#2a1a05; line-height:1.7; text-align:center; }
+
+/* SCENE */
+.scene { max-width:1080px; margin:0 auto; padding:0 20px 60px; }
+.narration  { text-align:center; font-family:'IM Fell English',serif; font-style:italic; font-size:18px; color:var(--text-dim); margin-bottom:44px; line-height:1.9; opacity:0; animation:fadeUp .8s ease forwards 1.3s; }
+.choices-lbl{ font-family:'Special Elite',cursive; font-size:11px; letter-spacing:6px; color:var(--gold-dim); text-align:center; text-transform:uppercase; margin-bottom:36px; opacity:0; animation:fadeUp .6s ease forwards 1.5s; }
+
+/* CARDS GRID */
+.cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(290px,1fr)); gap:32px; }
+
+.card { position:relative; cursor:pointer; opacity:0; z-index:20; }
+.card:nth-child(1){ animation:cardIn .7s cubic-bezier(.16,1,.3,1) forwards 1.7s; }
+.card:nth-child(2){ animation:cardIn .7s cubic-bezier(.16,1,.3,1) forwards 1.9s; }
+.card:nth-child(3){ animation:cardIn .7s cubic-bezier(.16,1,.3,1) forwards 2.1s; }
+
+.card::before, .card::after { content:''; position:absolute; inset:0; border-radius:1px; z-index:1; pointer-events:none; }
+.card::before{ background:var(--paper-dk); transform:rotate(-2.6deg) translate(3px,4px); filter:brightness(.82); }
+.card::after { background:var(--paper-mid); transform:rotate(1.7deg) translate(-2px,5px); filter:brightness(.76); }
+
+.card:nth-child(1) .paper{ transform:rotate(-1.6deg); }
+.card:nth-child(2) .paper{ transform:rotate(1.1deg); }
+.card:nth-child(3) .paper{ transform:rotate(-.7deg); }
+.card:hover .paper{ transform:rotate(0deg) translateY(-9px) scale(1.02) !important; }
+
+/* PAPER SURFACE */
+.paper {
+  position:relative; z-index:2;
+  background:var(--paper);
+  background-image:repeating-linear-gradient(transparent,transparent 27px,rgba(170,148,108,.27) 27px,rgba(170,148,108,.27) 28px);
+  padding:28px 26px 28px; border-radius:1px;
+  box-shadow:4px 7px 22px rgba(0,0,0,.55);
+  transition:transform .38s ease, box-shadow .38s ease;
+  overflow:visible;
+}
+.paper-line  { position:absolute; left:50px; top:0; bottom:0; width:1px; background:rgba(180,50,50,.28); pointer-events:none; z-index:1; }
+.paper-grain { position:absolute; inset:0; pointer-events:none; z-index:1; opacity:.04; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='128' height='128' filter='url(%23p)'/%3E%3C/svg%3E"); }
+
+.stamp  { position:absolute; top:18px; right:18px; transform:rotate(11deg); z-index:3; opacity:.82; pointer-events:none; }
+.stamp span { display:block; border:2.5px solid var(--gold); padding:5px 9px; font-family:'Special Elite',cursive; font-size:8.5px; letter-spacing:1.5px; text-transform:uppercase; text-align:center; line-height:1.5; color:var(--gold-dim); background:rgba(201,160,76,.08); }
+.pclip  { position:absolute; top:-6px; right:48px; width:13px; height:46px; border:2.5px solid #aaa; border-radius:7px 7px 0 0; border-bottom:none; pointer-events:none; z-index:3; }
+.pclip::after{ content:''; position:absolute; top:7px; left:2px; width:5px; height:30px; border:2px solid #aaa; border-radius:4px 4px 0 0; border-bottom:none; }
+.tape   { position:absolute; top:-9px; left:50%; transform:translateX(-50%) rotate(-1.5deg); width:66px; height:20px; background:rgba(220,200,140,.42); border:1px solid rgba(200,180,120,.28); pointer-events:none; z-index:3; }
+.cfold  { position:absolute; bottom:0; right:0; width:28px; height:28px; background:linear-gradient(225deg,#1a140c 50%,var(--paper-dk) 50%); pointer-events:none; }
+
+.badge  { display:flex; align-items:center; gap:10px; margin-bottom:14px; position:relative; z-index:2; }
+.bletter{ width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-weight:900; font-size:17px; border:2px solid var(--gold); flex-shrink:0; color:var(--gold); background:rgba(201,160,76,.12); }
+.bsub   { font-family:'Special Elite',cursive; font-size:10px; letter-spacing:3px; color:var(--ink); opacity:.65; text-transform:uppercase; }
+.ctitle { font-family:'Playfair Display',serif; font-weight:700; font-size:20px; line-height:1.25; margin-bottom:14px; position:relative; z-index:2; color:#2a1a05; }
+.cdesc  { font-family:'Crimson Text',serif; font-size:15px; line-height:1.78; color:#3a3020; font-style:italic; margin-bottom:22px; padding-left:12px; border-left:2px solid rgba(110,85,40,.28); position:relative; z-index:2; }
+
+.pick-btn {
+  position:relative; z-index:50; display:block; width:100%;
+  padding:13px 20px; margin-top:8px;
+  font-family:'Special Elite',cursive; font-size:13px; letter-spacing:2px; text-transform:uppercase;
+  cursor:pointer; border:none; border-radius:3px;
+  background:linear-gradient(135deg,#c9a84c,#a07828); color:#fffdf5;
+  box-shadow:0 4px 14px rgba(160,120,40,.55);
+  pointer-events:all; user-select:none;
+  transition:transform .25s ease, box-shadow .25s ease, filter .25s ease;
+}
+.pick-btn:hover  { transform:translateY(-3px); box-shadow:0 8px 22px rgba(180,140,50,.7); filter:brightness(1.12); }
+.pick-btn:active { transform:translateY(1px); box-shadow:0 2px 8px rgba(160,120,40,.4); }
+
+/* ══ LOADING OVERLAY (dari kode 2) ══ */
+#loading-overlay {
+  position:fixed; inset:0; z-index:8000;
+  background:#0d0b08;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:32px;
+  opacity:0; pointer-events:none;
+  transition:opacity .6s ease;
+}
+#loading-overlay.on { opacity:1; pointer-events:all; }
+
+.loading-icon {
+  font-size:48px;
+  animation:pulseIcon 1.4s ease-in-out infinite;
+}
+@keyframes pulseIcon {
+  0%,100% { transform:scale(1); opacity:.7; }
+  50%      { transform:scale(1.15); opacity:1; }
+}
+
+.loading-title {
+  font-family:'Playfair Display',serif;
+  font-weight:900;
+  font-size:clamp(28px,5vw,48px);
+  color:var(--gold);
+  letter-spacing:2px;
+  text-align:center;
+  opacity:0;
+  transform:translateY(14px);
+  transition:opacity .7s ease, transform .7s ease;
+}
+.loading-sub {
+  font-family:'IM Fell English',serif;
+  font-style:italic;
+  font-size:16px;
+  color:var(--text-dim);
+  letter-spacing:1px;
+  text-align:center;
+  opacity:0;
+  transform:translateY(14px);
+  transition:opacity .7s ease .15s, transform .7s ease .15s;
+}
+.loading-bar-wrap {
+  width:260px; height:2px;
+  background:rgba(201,168,76,.15);
+  border-radius:2px; overflow:hidden;
+}
+.loading-bar-fill {
+  height:100%; width:0%;
+  background:linear-gradient(90deg,var(--gold-dim),var(--gold));
+  border-radius:2px;
+  transition:width .1s linear;
+}
+.loading-quote {
+  font-family:'IM Fell English',serif;
+  font-style:italic;
+  font-size:14px;
+  color:rgba(201,168,76,.5);
+  max-width:340px;
+  text-align:center;
+  letter-spacing:.5px;
+  opacity:0;
+  transform:translateY(14px);
+  transition:opacity .7s ease .3s, transform .7s ease .3s;
+}
+
+/* ══ ENDING SCREEN (dari kode 1, tidak diubah) ══ */
+#ending {
+  position:fixed; inset:0;
+  z-index:9000;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+  opacity:0; pointer-events:none;
+  transition:opacity .5s ease;
+}
+#ending.on { opacity:1; pointer-events:all; }
+
+#e-bg    { position:absolute; inset:0; z-index:0; }
+#e-ptcls { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:1; }
+#e-ray   { position:absolute; top:-5%; left:50%; transform:translateX(-50%); width:280px; height:75%; clip-path:polygon(33% 0%,67% 0%,100% 100%,0% 100%); pointer-events:none; z-index:1; opacity:.07; }
+#e-vig   { position:absolute; inset:0; pointer-events:none; z-index:2; background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.6) 80%); }
+#e-grain { position:absolute; inset:0; pointer-events:none; opacity:.3; z-index:2; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E"); }
+#e-content { position:relative; z-index:10; text-align:center; max-width:660px; width:100%; padding:30px 24px; }
+
+.ebg-a { background:radial-gradient(ellipse at 35% 40%,#2e1e00 0%,#140e00 45%,#080500 100%); }
+.ebg-b { background:radial-gradient(ellipse at 60% 38%,#0c1a14 0%,#070f0b 45%,#030806 100%); }
+.ebg-c { background:radial-gradient(ellipse at 42% 44%,#200404 0%,#100202 45%,#060101 100%); }
+
+.ptcl { position:absolute; border-radius:50%; animation:floatUp linear infinite; opacity:0; }
+@keyframes floatUp { 0%{transform:translateY(100vh) translateX(0);opacity:0} 10%{opacity:1} 90%{opacity:.5} 100%{transform:translateY(-20vh) translateX(var(--dx));opacity:0} }
+
+.ray-a { background:linear-gradient(180deg,#ffd060,transparent); }
+.ray-b { background:linear-gradient(180deg,#70c090,transparent); }
+.ray-c { background:linear-gradient(180deg,#c04040,transparent); }
+
+.e-eye   { font-family:'Special Elite',cursive; font-size:11px; letter-spacing:6px; text-transform:uppercase; margin-bottom:28px; opacity:0; }
+.e-eye.go{ animation:fadeUp .6s ease forwards; }
+
+.e-title { font-family:'Playfair Display',serif; font-weight:900; font-size:clamp(58px,11vw,108px); line-height:.92; letter-spacing:-2px; margin-bottom:22px; opacity:0; }
+.e-title.go { animation:slam .7s cubic-bezier(.16,1,.3,1) forwards .28s; }
+.et-a { color:#e8b840; text-shadow:0 0 60px rgba(232,184,64,.45),0 0 120px rgba(232,184,64,.15); }
+.et-b { color:#72b890; text-shadow:0 0 60px rgba(114,184,144,.3),0 0 120px rgba(114,184,144,.1); }
+.et-c { color:#c03838; text-shadow:0 0 60px rgba(192,56,56,.45),0 0 120px rgba(192,56,56,.15); }
+
+.e-line { height:1px; width:0; margin:0 auto 26px; }
+.e-line.go { animation:growLine .8s ease forwards .65s; }
+@keyframes growLine { to{ width:190px; } }
+.el-a { background:linear-gradient(90deg,transparent,#c9a030,transparent); }
+.el-b { background:linear-gradient(90deg,transparent,#5a9870,transparent); }
+.el-c { background:linear-gradient(90deg,transparent,#9a2828,transparent); }
+
+.e-moral { font-family:'IM Fell English',serif; font-style:italic; font-size:clamp(17px,3vw,24px); line-height:1.65; margin-bottom:18px; opacity:0; }
+.e-moral.go { animation:fadeUp .7s ease forwards .95s; }
+.em-a { color:#d4be88; } .em-b { color:#90b8a0; } .em-c { color:#c08888; }
+
+.e-story { font-family:'Crimson Text',serif; font-size:clamp(15px,2vw,17px); line-height:1.88; margin-bottom:42px; padding:0 8px; opacity:0; }
+.e-story.go { animation:fadeUp .7s ease forwards 1.25s; }
+.es-a { color:#a09060; } .es-b { color:#688a78; } .es-c { color:#906060; }
+
+.e-back { font-family:'Special Elite',cursive; font-size:11px; letter-spacing:4px; text-transform:uppercase; background:transparent; padding:13px 48px; cursor:pointer; transition:all .3s ease; opacity:0; border-radius:1px; display:inline-flex; align-items:center; gap:8px; }
+.e-back.go { animation:fadeUp .6s ease forwards 1.55s; }
+.eb-a { border:1px solid rgba(201,168,76,.5); color:#c9a84c; }
+.eb-a:hover { background:rgba(201,168,76,.12); border-color:#c9a84c; }
+.eb-b { border:1px solid rgba(90,152,112,.5); color:#5a9870; }
+.eb-b:hover { background:rgba(90,152,112,.1); border-color:#5a9870; }
+.eb-c { border:1px solid rgba(154,40,40,.5); color:#9a2828; }
+.eb-c:hover { background:rgba(154,40,40,.1); border-color:#9a2828; }
+
+/* KEYFRAMES */
+@keyframes fadeUp  { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn  { from{opacity:0} to{opacity:1} }
+@keyframes cardIn  { from{opacity:0;transform:translateY(38px)} to{opacity:1;transform:translateY(0)} }
+@keyframes slam    { 0%{opacity:0;transform:scale(1.35) translateY(16px);filter:blur(12px)} 55%{opacity:1;filter:blur(0)} 78%{transform:scale(.96)} 100%{opacity:1;transform:scale(1) translateY(0)} }
+</style>
+</head>
+<body>
+
+<!-- BG -->
+<canvas id="bg-canvas"></canvas>
+<div id="win-shadow"></div>
+<div id="lamp-glow"></div>
+<div id="vignette"></div>
+<div id="grain"></div>
+
+<!-- LOADING OVERLAY (dari kode 2) -->
+<div id="loading-overlay">
+  <div class="loading-icon" id="l-icon">⚖️</div>
+  <div class="loading-title" id="l-title">Hero</div>
+  <div class="loading-sub"   id="l-sub">Memuat akhir cerita...</div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar-fill" id="l-bar"></div>
+  </div>
+  <div class="loading-quote" id="l-quote"></div>
+</div>
+
+<!-- CONTENT -->
+<div class="pg">
+
+  <div class="hdr">
+    <div class="hdr-label">⚖ Bab Terakhir</div>
+    <h1 class="hdr-title">Epilog</h1>
+    <p class="hdr-sub">Moral Decision · Multiple Ending</p>
+    <div class="gold-hr"></div>
+    <p class="hdr-intro">Raka kini menggenggam semua bukti. Dokumen-dokumen itu tersebar di meja, cahaya redup malam menyinarinya. Keputusan ini tidak bisa diulang.</p>
+  </div>
+
+  <div class="sticky-wrap">
+    <div class="sticky">
+      <p>📁 Bukti terkumpul: RAB Fiktif · Tanda Tangan Persetujuan · Rekening Bersama<br>
+      <small style="opacity:.65;font-size:12px;">— Semua mengarah ke satu jaringan —</small></p>
+    </div>
+  </div>
+
+  <div class="scene">
+    <p class="narration">Tiga pilihan ada di hadapanmu, Raka.<br>Masing-masing punya harga yang harus dibayar.</p>
+    <div class="choices-lbl">— Tentukan Pilihanmu —</div>
+
+    <div class="cards">
+
+      <!-- PILIHAN A -->
+      <div class="card">
+        <div class="pclip"></div>
+        <div class="paper">
+          <div class="paper-line"></div>
+          <div class="paper-grain"></div>
+          <div class="stamp"><span>🏆<br>Hero<br>Ending</span></div>
+          <div class="badge">
+            <div class="bletter">A</div>
+            <div class="bsub">Pilihan Pertama</div>
+          </div>
+          <h2 class="ctitle">Laporkan ke KPK</h2>
+          <p class="cdesc">Raka menyerahkan semua bukti. Nama ayah tercoreng di media, keluarga dikucilkan — tapi proyek korup terbongkar dan rakyat mendapat keadilan.</p>
+          <button class="pick-btn" onclick="pick('a')">✦ Ambil Pilihan Ini</button>
+          <div class="cfold"></div>
+        </div>
+      </div>
+
+      <!-- PILIHAN B -->
+      <div class="card">
+        <div class="tape"></div>
+        <div class="paper">
+          <div class="paper-line"></div>
+          <div class="paper-grain"></div>
+          <div class="stamp"><span>🥈<br>Setengah<br>Jalan</span></div>
+          <div class="badge">
+            <div class="bletter">B</div>
+            <div class="bsub">Pilihan Kedua</div>
+          </div>
+          <h2 class="ctitle">Serahkan Anonim</h2>
+          <p class="cdesc">Raka kirim bukti tanpa nama. Kasus ditangani, tapi tidak tuntas karena pelapor tidak bisa dihubungi. Beberapa pelaku lolos dari jerat hukum.</p>
+          <button class="pick-btn" onclick="pick('b')">✦ Ambil Pilihan Ini</button>
+          <div class="cfold"></div>
+        </div>
+      </div>
+
+      <!-- PILIHAN C -->
+      <div class="card">
+        <div class="paper">
+          <div class="paper-line"></div>
+          <div class="paper-grain"></div>
+          <div class="stamp"><span>💔<br>Bitter<br>Ending</span></div>
+          <div class="badge">
+            <div class="bletter">C</div>
+            <div class="bsub">Pilihan Ketiga</div>
+          </div>
+          <h2 class="ctitle">Simpan Sendiri</h2>
+          <p class="cdesc">Raka memilih melindungi nama ayah. Beberapa tahun kemudian, korupsi terulang di proyek yang sama. Raka hidup dengan penyesalan yang tak pernah pergi.</p>
+          <button class="pick-btn" onclick="pick('c')">✦ Ambil Pilihan Ini</button>
+          <div class="cfold"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ENDING SCREEN (dari kode 1, tidak diubah) -->
+<div id="ending">
+  <div id="e-bg"></div>
+  <div id="e-ptcls"></div>
+  <div id="e-ray"></div>
+  <div id="e-vig"></div>
+  <div id="e-grain"></div>
+  <div id="e-content"></div>
+</div>
+
+<script>
+/* ── BACKGROUND ── */
+(function(){
+  const cv=document.getElementById('bg-canvas');
+  function resize(){ cv.width=innerWidth; cv.height=innerHeight; draw(); }
+  window.addEventListener('resize',resize);
+  function draw(){
+    const ctx=cv.getContext('2d'),W=cv.width,H=cv.height;
+    ctx.clearRect(0,0,W,H);
+    const bg=ctx.createRadialGradient(W*.25,H*.35,0,W*.6,H*.6,W);
+    bg.addColorStop(0,'#1a140c'); bg.addColorStop(.4,'#120f08'); bg.addColorStop(.7,'#0a0804'); bg.addColorStop(1,'#050302');
+    ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+    const lamp=ctx.createRadialGradient(W*.15,H*.25,0,W*.15,H*.25,W*.4);
+    lamp.addColorStop(0,'rgba(220,160,60,0.18)'); lamp.addColorStop(.3,'rgba(180,120,30,0.08)'); lamp.addColorStop(1,'transparent');
+    ctx.fillStyle=lamp; ctx.fillRect(0,0,W*.4,H*.5);
+    const papers=[{x:.08,y:.12,w:92,h:68,r:-13},{x:.82,y:.08,w:105,h:75,r:11},{x:.92,y:.58,w:78,h:62,r:-8},{x:.06,y:.68,w:82,h:60,r:9},{x:.48,y:.85,w:88,h:66,r:-6},{x:.72,y:.82,w:74,h:54,r:7},{x:.18,y:.46,w:70,h:52,r:-10},{x:.85,y:.34,w:82,h:58,r:5}];
+    papers.forEach(p=>{
+      const px=p.x*W,py=p.y*H;
+      ctx.save(); ctx.translate(px+p.w/2,py+p.h/2); ctx.rotate(p.r*Math.PI/180);
+      ctx.shadowColor='rgba(0,0,0,0.6)'; ctx.shadowBlur=12; ctx.shadowOffsetX=4; ctx.shadowOffsetY=6;
+      ctx.fillStyle='rgba(235,220,185,0.055)'; ctx.strokeStyle='rgba(190,170,130,0.09)'; ctx.lineWidth=1.2;
+      ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.strokeRect(-p.w/2,-p.h/2,p.w,p.h); ctx.shadowBlur=0;
+      ctx.fillStyle='rgba(90,70,40,0.22)';
+      for(let i=0;i<Math.floor(p.h/14);i++){ const lw=(.35+Math.random()*.6)*p.w; ctx.fillRect(-p.w/2+8,-p.h/2+12+i*13,lw,1.8); }
+      ctx.restore();
+    });
+    const nodes=[[.12*W,.20*H],[.35*W,.25*H],[.58*W,.18*H],[.80*W,.35*H],[.16*W,.55*H],[.45*W,.62*H],[.75*W,.52*H],[.22*W,.82*H],[.62*W,.78*H],[.40*W,.38*H],[.68*W,.68*H]];
+    [[0,1],[1,2],[2,3],[1,4],[4,5],[5,6],[3,6],[5,9],[7,9],[0,4],[2,5],[8,9]].forEach(([a,b])=>{
+      const[x1,y1]=nodes[a],[x2,y2]=nodes[b];
+      ctx.beginPath(); ctx.moveTo(x1,y1); ctx.quadraticCurveTo((x1+x2)/2,(y1+y2)/2+12,x2,y2);
+      ctx.strokeStyle='rgba(160,30,30,0.35)'; ctx.lineWidth=1; ctx.stroke();
+    });
+    const pinClr=['#d03030','#d9a030','#d03030','#c92020','#d9a030','#d03030','#b81818','#d9a030','#c92020','#d9a030','#d03030'];
+    nodes.forEach(([nx,ny],i)=>{
+      ctx.beginPath(); ctx.arc(nx+1.5,ny+1.5,4.5,0,Math.PI*2); ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fill();
+      ctx.beginPath(); ctx.arc(nx,ny,4,0,Math.PI*2); ctx.fillStyle=pinClr[i%pinClr.length]; ctx.fill();
+      ctx.beginPath(); ctx.arc(nx-.8,ny-.8,1.5,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.45)'; ctx.fill();
+    });
+  }
+  resize();
+})();
+
+/* ── ENDINGS DATA ── */
+const D={
+  a:{
+    eye:'🏆 Ending Pertama', eyeClr:'#c9a84c',
+    title:'Hero', tc:'et-a', lc:'el-a', mc:'em-a', sc:'es-a', bc:'eb-a', rc:'ray-a', bgc:'ebg-a', pc:'#c9a84c',
+    moral:'"Nama yang baik bukan diwariskan, tapi diperjuangkan."',
+    story:'Raka menyerahkan semua bukti ke KPK. Nama ayah tercoreng di media nasional — keluarga dikucilkan, beberapa teman menjauh. Tapi proyek senilai 40 miliar itu terbongkar. Rakyat mendapat keadilan yang selama ini mereka tunggu.',
+    loadIcon:'⚖️', loadTitle:'Hero', loadQuote:'"Nama yang baik bukan diwariskan, tapi diperjuangkan."'
+  },
+  b:{
+    eye:'🥈 Ending Kedua', eyeClr:'#72b890',
+    title:'Setengah<br>Jalan', tc:'et-b', lc:'el-b', mc:'em-b', sc:'es-b', bc:'eb-b', rc:'ray-b', bgc:'ebg-b', pc:'#72b890',
+    moral:'"Kebenaran yang setengah-setengah masih lebih baik dari diam... tapi belum cukup."',
+    story:'Raka mengirim bukti secara anonim. Kasus dibuka, tapi penyelidik kesulitan melanjutkan tanpa saksi yang bisa dihubungi. Beberapa nama besar lolos. Sistem sedikit terguncang — tapi tidak roboh.',
+    loadIcon:'📬', loadTitle:'Setengah Jalan', loadQuote:'"Kebenaran yang setengah masih lebih baik dari diam... tapi belum cukup."'
+  },
+  c:{
+    eye:'💔 Ending Ketiga', eyeClr:'#c03838',
+    title:'Bitter', tc:'et-c', lc:'el-c', mc:'em-c', sc:'es-c', bc:'eb-c', rc:'ray-c', bgc:'ebg-c', pc:'#c03838',
+    moral:'"Diam bukan selalu berarti damai."',
+    story:'Raka melipat dokumen-dokumen itu dan menyimpannya. Nama ayah tetap bersih di mata dunia. Tapi tiga tahun kemudian, korupsi terulang di proyek yang sama. Raka membaca beritanya sendirian — dan menangis.',
+    loadIcon:'💔', loadTitle:'Bitter', loadQuote:'"Diam bukan selalu berarti damai."'
+  }
+};
+
+/* ── LOADING OVERLAY ── */
+let loadTimer = null;
+
+function pick(k){
+  const e = D[k];
+
+  document.getElementById('l-icon').textContent  = e.loadIcon;
+  document.getElementById('l-title').textContent = e.loadTitle;
+  document.getElementById('l-sub').textContent   = 'Memuat akhir cerita...';
+  document.getElementById('l-quote').textContent = e.loadQuote;
+
+  ['l-title','l-sub','l-quote'].forEach(id => {
+    const el = document.getElementById(id);
+    el.style.opacity = '1';
+    el.style.transform = 'translateY(0)';
+  });
+
+  const overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('on');
+
+  const bar = document.getElementById('l-bar');
+  bar.style.width = '0%';
+  let pct = 0;
+  if(loadTimer) clearInterval(loadTimer);
+  loadTimer = setInterval(() => {
+    const speed = pct < 60 ? (Math.random()*2+0.8) : (Math.random()*0.8+0.3);
+    pct += speed;
+    if(pct >= 100){ pct = 100; clearInterval(loadTimer); }
+    bar.style.width = pct + '%';
+  }, 80);
+
+  setTimeout(() => {
+    overlay.classList.remove('on');
+    ['l-title','l-sub','l-quote'].forEach(id => {
+      const el = document.getElementById(id);
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(14px)';
+    });
+    bar.style.width = '0%';
+    showEnding(k);
+  }, 5000);
+}
+
+/* ── ENDING SCREEN ── */
+function mkParticles(col){
+  const b=document.getElementById('e-ptcls');
+  b.innerHTML='';
+  for(let i=0;i<24;i++){
+    const d=document.createElement('div');
+    d.className='ptcl';
+    const s=2+Math.random()*4;
+    d.style.cssText=`width:${s}px;height:${s}px;left:${Math.random()*100}%;bottom:-10px;background:${col};--dx:${(Math.random()-.5)*130}px;animation-duration:${5+Math.random()*6}s;animation-delay:${Math.random()*3}s;box-shadow:0 0 ${s*2}px ${col};`;
+    b.appendChild(d);
+  }
+}
+
+function showEnding(k){
+  const e=D[k];
+  document.getElementById('e-bg').className=e.bgc;
+  document.getElementById('e-ray').className=e.rc;
+  mkParticles(e.pc);
+  document.getElementById('e-content').innerHTML=`
+    <div class="e-eye go" style="color:${e.eyeClr}">${e.eye}</div>
+    <h1 class="e-title ${e.tc} go">${e.title}</h1>
+    <div class="e-line ${e.lc} go"></div>
+    <p class="e-moral ${e.mc} go">${e.moral}</p>
+    <p class="e-story ${e.sc} go">${e.story}</p>
+    <button class="e-back ${e.bc} go" onclick="goToMainMenu()">⌂ Menu Utama</button>
+  `;
+  document.getElementById('ending').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+
+/* ── MAIN MENU ── */
+function goToMainMenu(){
+  /* Ganti 'play.html' dengan path menu utama game kamu */
+  window.location.href = 'play.html';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Chapter 2 — Malam Terakhir di Kantor Lama</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0d0a07; color:#d9c9a3; font-family:Georgia,'Times New Roman',serif; overflow:hidden; user-select:none; }
+.header { position:fixed;top:0;left:0;right:0;padding:12px 20px;display:flex;align-items:center;gap:18px;z-index:100;background:linear-gradient(to bottom,rgba(13,10,7,0.95),transparent); }
+.btn-menu { border:1px solid #6b5a3a;background:transparent;color:#d9c9a3;padding:6px 14px;font-family:inherit;font-size:10px;letter-spacing:2px;cursor:pointer;transition:0.2s; }
+.btn-menu:hover { background:#6b5a3a22; }
+.chapter-label { font-size:9px;letter-spacing:4px;color:#8a7548; }
+.chapter-title { font-style:italic;font-size:13px;color:#d9c9a3;margin-top:2px; }
+.timer { position:fixed;top:14px;right:228px;border:1px solid #8a4a3a;padding:8px 18px;background:rgba(26,14,10,0.9);z-index:100; }
+.timer-label { font-size:8px;letter-spacing:3px;color:#a86a52; }
+.timer-value { font-size:22px;color:#e0a890;font-family:'Courier New',monospace;letter-spacing:2px;margin-top:2px; }
+.timer.warning .timer-value { color:#ff6b4a;animation:pulse 0.5s infinite; }
+@keyframes pulse { 50%{opacity:0.5} }
+#gameCanvas { position:fixed;top:0;left:0;cursor:none; }
+.sidebar { position:fixed;top:76px;right:8px;width:208px;bottom:8px;display:flex;flex-direction:column;gap:9px;z-index:90; }
+.panel { border:1px solid #5a4730;background:rgba(26,20,13,0.94);padding:11px; }
+.panel-header { display:flex;align-items:center;gap:6px;font-size:8px;letter-spacing:3px;color:#a89668;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid #3a2f1f; }
+.ph-dot { width:8px;height:8px;border:1px solid #a89668; }
+.objective { display:flex;align-items:flex-start;gap:6px;font-size:10px;color:#c9b988;margin-bottom:6px;font-style:italic; }
+.obj-box { width:10px;height:10px;border:1px solid #6b5a3a;flex-shrink:0;margin-top:2px; }
+.objective.done .obj-box { background:#6b8a3a;border-color:#9aca5a; }
+.objective.done .obj-box::after { content:'✓';color:#0d0a07;font-size:8px;display:block;text-align:center;line-height:8px; }
+.objective.done { text-decoration:line-through;opacity:0.55; }
+.progress { text-align:right;font-size:8px;color:#7a6540;letter-spacing:2px;padding-top:6px;border-top:1px solid #3a2f1f; }
+.ev-item { font-size:9px;color:#6b5a3a;padding:3px 0;padding-left:11px;position:relative;font-style:italic; }
+.ev-item::before { content:'●';position:absolute;left:0;color:#6b5a3a; }
+.ev-item.found { color:#d9c9a3; }
+.ev-item.found::before { color:#9aca5a; }
+.controls { position:fixed;bottom:10px;left:10px;display:flex;align-items:center;gap:10px;z-index:90; }
+.kg { display:grid;grid-template-columns:repeat(3,20px);grid-template-rows:repeat(2,20px);gap:2px; }
+.key { border:1px solid #6b5a3a;background:rgba(26,20,13,0.9);color:#d9c9a3;font-size:8px;display:flex;align-items:center;justify-content:center; }
+.key.empty { border:none; }
+.ctrl-lbl { font-size:7px;letter-spacing:2px;color:#7a6540; }
+.alert-msg { position:fixed;bottom:55px;left:50%;transform:translateX(-50%);background:rgba(26,14,10,0.94);border:1px solid #8a4a3a;padding:10px 22px;color:#e0a890;font-size:11px;font-style:italic;letter-spacing:1px;z-index:500;opacity:0;pointer-events:none;transition:opacity 0.3s;max-width:380px;text-align:center; }
+.alert-msg.show { opacity:1; }
+.overlay { position:fixed;inset:0;background:rgba(13,10,7,0.93);display:flex;align-items:center;justify-content:center;z-index:1000;opacity:0;pointer-events:none;transition:opacity 0.4s; }
+.overlay.show { opacity:1;pointer-events:all; }
+.ov-title { font-size:30px;color:#d9c9a3;letter-spacing:6px;margin-bottom:12px; }
+.ov-title.fail { color:#c9665a; }
+.ov-title.win { color:#9aca5a; }
+.ov-sub { font-style:italic;color:#a89668;font-size:13px;margin-bottom:28px;line-height:1.7;max-width:440px;text-align:center; }
+.ov-btn { border:1px solid #6b5a3a;background:transparent;color:#d9c9a3;padding:10px 24px;font-family:inherit;font-size:10px;letter-spacing:3px;cursor:pointer;margin:0 4px;transition:0.2s; }
+.ov-btn:hover { background:#6b5a3a33; }
+.footer { position:fixed;bottom:8px;right:10px;font-size:7px;letter-spacing:2px;color:#5a4730;z-index:90; }
+</style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div class="header">
+  <button class="btn-menu" onclick="goMenu()">&#8592; MENU</button>
+  <div>
+    <div class="chapter-label">CHAPTER 2</div>
+    <div class="chapter-title">"Malam Terakhir di Kantor Lama"</div>
+  </div>
+</div>
+
+<div class="timer" id="timerBox">
+  <div class="timer-label">SISA WAKTU</div>
+  <div class="timer-value" id="timerVal">03:00</div>
+</div>
+
+<div class="sidebar">
+  <div class="panel">
+    <div class="panel-header"><div class="ph-dot"></div>CATATAN MISI</div>
+    <div class="objective" id="obj-cctv"><div class="obj-box"></div><div>Matikan CCTV di ruang server</div></div>
+    <div class="objective" id="obj-rab"><div class="obj-box"></div><div>Ambil dokumen RAB Fiktif</div></div>
+    <div class="objective" id="obj-ttd"><div class="obj-box"></div><div>Ambil Tanda Tangan Persetujuan</div></div>
+    <div class="objective" id="obj-rek"><div class="obj-box"></div><div>Ambil Rekening Bersama</div></div>
+    <div class="objective" id="obj-exit"><div class="obj-box"></div><div>Kembali ke pintu keluar</div></div>
+    <div class="progress" id="prog">0 / 5 Selesai</div>
+  </div>
+  <div class="panel">
+    <div class="panel-header"><div class="ph-dot"></div>BUKTI TERKUMPUL</div>
+    <div class="ev-item" id="ev-cctv">Akses CCTV dimatikan</div>
+    <div class="ev-item" id="ev-rab">RAB Fiktif</div>
+    <div class="ev-item" id="ev-ttd">Tanda Tangan Persetujuan</div>
+    <div class="ev-item" id="ev-rek">Rekening Bersama</div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="kg">
+    <div class="key empty"></div><div class="key">W</div><div class="key empty"></div>
+    <div class="key">A</div><div class="key">S</div><div class="key">D</div>
+  </div>
+  <div class="ctrl-lbl">GERAK</div>
+  <div style="margin-left:12px;display:flex;align-items:center;gap:5px;">
+    <div class="key" style="width:40px;font-size:7px;">SHIFT</div>
+    <div class="ctrl-lbl">SEMBUNYI</div>
+  </div>
+  <div style="margin-left:12px;display:flex;align-items:center;gap:5px;">
+    <div class="key" style="width:24px;">E</div>
+    <div class="ctrl-lbl">AMBIL/AKSI</div>
+  </div>
+</div>
+
+<div class="alert-msg" id="alertMsg"></div>
+
+<div class="overlay" id="overlay">
+  <div style="text-align:center;">
+    <div class="ov-title" id="ovTitle">GAGAL</div>
+    <div class="ov-sub" id="ovSub">Kau ketahuan. Mulai ulang misi.</div>
+    <button class="ov-btn" onclick="restart()">ULANGI</button>
+    <button class="ov-btn" onclick="goMenu()">MENU</button>
+  </div>
+</div>
+
+<div class="footer">VER 1.0 &middot; ANTI-KORUPSI</div>
+
+<script>
+// ================================================================
+//  KONFIGURASI ASSET
+//  Isi path file lokal kamu. Kalau null → pixel art otomatis.
+//
+//  Contoh struktur folder:
+//    chapter2.html
+//    assets/
+//      map_chapter2.png
+//      player.png
+//      guard.png
+// ================================================================
+const ASSET_CONFIG = {
+  map    : './asset/chapter2.png',              // contoh: 'assets/map_chapter2.png'
+  player : './asset/char/walk1.png',              // contoh: 'assets/player.png'
+  guard  : './asset/char/left2.png',              // contoh: 'assets/guard.png'
+};
+// ================================================================
+
+
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const SIDEBAR_W = 226;
+let CW, CH, SCALE;
+const MAP_W = 666, MAP_H = 472;
+
+function resize() {
+  CW = window.innerWidth - SIDEBAR_W;
+  CH = window.innerHeight;
+  canvas.width  = CW;
+  canvas.height = CH;
+  SCALE = Math.min(CW / MAP_W, CH / MAP_H);
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ===== ASSET LOADER =====
+function tryLoad(src) {
+  if (!src) return Promise.resolve(null);
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload  = () => resolve(img);
+    img.onerror = () => { console.warn('[ASSET] tidak ditemukan:', src); resolve(null); };
+    img.src = src;
+  });
+}
+
+const A = { map: null, player: null, guard: null };
+
+async function loadAllAssets() {
+  [A.map, A.player, A.guard] = await Promise.all([
+    tryLoad(ASSET_CONFIG.map),
+    tryLoad(ASSET_CONFIG.player),
+    tryLoad(ASSET_CONFIG.guard),
+  ]);
+  console.log('%c[ASSET]', 'font-weight:bold',
+    'map:', A.map ? '✓' : '✗ pixel art',
+    '| player:', A.player ? '✓' : '✗ pixel art',
+    '| guard:', A.guard ? '✓' : '✗ pixel art');
+}
+
+// ================================================================
+//  RENDER KARAKTER — satu foto langsung, flip kalau facing kiri/atas
+// ================================================================
+function renderChar(img, cx, cy, dw, dh, facing, hidden, pixelFn, animFrame) {
+  cx = Math.round(cx); cy = Math.round(cy);
+  if (img) {
+    ctx.save();
+    if (hidden) ctx.globalAlpha = 0.35;
+    if (facing === 'left' || facing === 'up') {
+      ctx.translate(cx + dw, cy);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, dw, dh);
+    } else {
+      ctx.drawImage(img, cx, cy, dw, dh);
+    }
+    ctx.restore();
+  } else {
+    pixelFn(cx, cy, dw, dh, facing, animFrame, hidden);
+  }
+}
+
+// ================================================================
+//  PIXEL ART FALLBACK — PEMAIN
+// ================================================================
+function drawPlayerPixel(cx, cy, w, h, facing, frame, hidden) {
+  const flip = facing === 'left' || facing === 'up';
+  ctx.save();
+  if (hidden) ctx.globalAlpha = 0.35;
+  if (flip) { ctx.translate(cx+w, cy); ctx.scale(-1,1); } else ctx.translate(cx, cy);
+  const f0 = frame === 0;
+  ctx.fillStyle = '#3a4a8a';
+  f0 ? (ctx.fillRect(2,h-10,8,10), ctx.fillRect(w-10,h-6,8,6))
+     : (ctx.fillRect(2,h-6,8,6),   ctx.fillRect(w-10,h-10,8,10));
+  ctx.fillStyle = '#1a3a6a'; ctx.fillRect(2, h*.4|0, w-4, h*.45|0);
+  ctx.fillStyle = '#2a4a7a'; ctx.fillRect(4, h*.42|0, w-8, h*.2|0);
+  ctx.fillStyle = '#c8a07a';
+  f0 ? (ctx.fillRect(0,h*.42|0,3,h*.22|0), ctx.fillRect(w-3,h*.48|0,3,h*.16|0))
+     : (ctx.fillRect(0,h*.48|0,3,h*.16|0), ctx.fillRect(w-3,h*.42|0,3,h*.22|0));
+  const [hx,hw,hh] = [w*.15|0, w*.7|0, h*.33|0];
+  ctx.fillStyle='#c8a07a'; ctx.fillRect(hx,0,hw,hh);
+  ctx.fillStyle='#1a0a00';
+  ctx.fillRect(hx,0,hw,hh*.35|0); ctx.fillRect(hx,0,3,hh*.6|0); ctx.fillRect(hx+hw-3,0,3,hh*.5|0);
+  ctx.fillStyle='#000';
+  ctx.fillRect(hx+hw*.2|0, hh*.45|0, 3,3); ctx.fillRect(hx+hw*.6|0, hh*.45|0, 3,3);
+  ctx.restore();
+}
+
+// ================================================================
+//  PIXEL ART FALLBACK — SATPAM
+// ================================================================
+function drawGuardPixel(cx, cy, w, h, facing, frame, hidden) {
+  const flip = facing === 'left' || facing === 'up';
+  ctx.save();
+  if (hidden) ctx.globalAlpha = 0.35;
+  if (flip) { ctx.translate(cx+w,cy); ctx.scale(-1,1); } else ctx.translate(cx,cy);
+  const f0 = frame === 0;
+  ctx.fillStyle='#1a1a2a';
+  f0 ? (ctx.fillRect(3,h-12,10,12), ctx.fillRect(w-13,h-7,10,7))
+     : (ctx.fillRect(3,h-7,10,7),   ctx.fillRect(w-13,h-12,10,12));
+  ctx.fillStyle='#2a3a2a'; ctx.fillRect(3, h*.38|0, w-6, h*.48|0);
+  ctx.fillStyle='#4a6a4a'; ctx.fillRect(w*.4|0, h*.4|0, w*.2|0, h*.15|0);
+  ctx.fillStyle='#c8a07a';
+  ctx.fillRect(0,h*.4|0,4,h*.25|0); ctx.fillRect(w-4,h*.4|0,4,h*.25|0);
+  const [hx,hw,hh]=[w*.12|0,w*.76|0,h*.32|0];
+  ctx.fillStyle='#c8a07a'; ctx.fillRect(hx,0,hw,hh);
+  ctx.fillStyle='#1a2a1a';
+  ctx.fillRect(hx-2,0,hw+4,hh*.5|0); ctx.fillRect(hx-4,hh*.42|0,hw+8,4);
+  ctx.fillStyle='#c8a020'; ctx.fillRect(hx+hw*.3|0, hh*.1|0, hw*.4|0, hh*.25|0);
+  ctx.fillStyle='#000';
+  ctx.fillRect(hx+hw*.18|0, hh*.55|0, 4,4); ctx.fillRect(hx+hw*.62|0, hh*.55|0, 4,4);
+  ctx.restore();
+}
+
+// ================================================================
+//  PETA
+// ================================================================
+function drawMap() {
+  if (A.map) { ctx.drawImage(A.map, 0, 0, MAP_W, MAP_H); return; }
+  drawMapPixel();
+}
+
+function drawMapPixel() {
+  ctx.fillStyle='#1e1814'; ctx.fillRect(0,0,MAP_W,MAP_H);
+  ctx.strokeStyle='#2a2018'; ctx.lineWidth=0.5;
+  for(let x=0;x<MAP_W;x+=32){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,MAP_H);ctx.stroke();}
+  for(let y=0;y<MAP_H;y+=32){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(MAP_W,y);ctx.stroke();}
+  function room(x,y,w,h,lbl){
+    ctx.fillStyle='#161210'; ctx.fillRect(x,y,w,h);
+    ctx.strokeStyle='#4a3a28'; ctx.lineWidth=2; ctx.strokeRect(x,y,w,h);
+    ctx.fillStyle='#6b5a3a'; ctx.font='bold 8px monospace'; ctx.textAlign='center';
+    ctx.fillText(lbl,x+w/2,y+14);
+  }
+  room(18,12,158,172,'RUANG SERVER');
+  room(184,12,330,272,'RUANG KERJA UTAMA');
+  room(520,12,130,272,'RUANG ARSIP');
+  room(18,190,158,170,'LOBI');
+  room(184,284,460,110,'KORIDOR');
+  room(518,284,130,175,'RUANG RAPAT');
+  for(let i=0;i<3;i++){
+    ctx.fillStyle='#2a2218'; ctx.fillRect(28+i*46,35,36,80);
+    ctx.strokeStyle='#3a3028'; ctx.lineWidth=1; ctx.strokeRect(28+i*46,35,36,80);
+    for(let j=0;j<6;j++){ctx.fillStyle=j%3===0?'#00ff44':'#ff4400';ctx.fillRect(32+i*46,40+j*12,4,4);}
+  }
+  ctx.fillStyle='#2a2218'; ctx.fillRect(28,128,140,40);
+  ctx.strokeStyle='#4a3a28'; ctx.lineWidth=1; ctx.strokeRect(28,128,140,40);
+  ctx.fillStyle='#0a1a0a'; ctx.fillRect(32,131,60,30); ctx.fillRect(98,131,60,30);
+  const desks=[{x:196,y:38},{x:280,y:38},{x:364,y:38},{x:448,y:38},{x:196,y:120},{x:280,y:120},{x:364,y:120},{x:448,y:120},{x:196,y:202},{x:280,y:202},{x:364,y:202}];
+  for(const d of desks){
+    ctx.fillStyle='#3a2e20'; ctx.fillRect(d.x,d.y,70,40);
+    ctx.strokeStyle='#5a4a30'; ctx.lineWidth=1; ctx.strokeRect(d.x,d.y,70,40);
+    ctx.fillStyle='#0a1830'; ctx.fillRect(d.x+12,d.y+8,26,18);
+    ctx.fillStyle='#2a2218'; ctx.fillRect(d.x+44,d.y+22,20,10);
+  }
+  for(let row=0;row<3;row++) for(let col=0;col<2;col++){
+    ctx.fillStyle='#3a2e20'; ctx.fillRect(528+col*58,35+row*70,50,62);
+    ctx.strokeStyle='#5a4a30'; ctx.lineWidth=1; ctx.strokeRect(528+col*58,35+row*70,50,62);
+    for(let d=0;d<4;d++){ctx.fillStyle='#2a2218';ctx.fillRect(531+col*58,38+row*70+d*14,44,12);ctx.fillStyle='#8a7040';ctx.fillRect(549+col*58,43+row*70+d*14,8,4);}
+  }
+  ctx.fillStyle='#3a2a1a'; ctx.fillRect(30,230,100,40);
+  ctx.fillStyle='#4a3a2a'; ctx.fillRect(30,218,100,14);ctx.fillRect(30,230,14,40);ctx.fillRect(116,230,14,40);
+  ctx.fillStyle='#3a2e20'; ctx.fillRect(530,310,106,60);
+  ctx.strokeStyle='#5a4a30'; ctx.lineWidth=1; ctx.strokeRect(530,310,106,60);
+  [[175,160,12,50],[512,120,12,50],[290,274,80,12],[130,358,50,12],[538,274,50,12]]
+    .forEach(d=>{ctx.fillStyle='#5a4a2a';ctx.fillRect(...d);ctx.strokeStyle='#8a6a30';ctx.lineWidth=1;ctx.strokeRect(...d);});
+  ctx.fillStyle='#4a3a20'; ctx.fillRect(10,210,10,120);
+  ctx.strokeStyle='#9aca5a'; ctx.lineWidth=1.5; ctx.strokeRect(10,210,10,120);
+  ctx.fillStyle='#9aca5a'; ctx.font='bold 7px monospace'; ctx.textAlign='center';
+  ctx.fillText('EXIT',15,275);
+}
+
+// ================================================================
+//  DATA GAME
+// ================================================================
+const walkZones = [
+  {x: 18, y: 12, w: 400, h: 344},  // Ukuran lebih besar untuk area pertama
+  {x: 184, y: 12, w: 660, h: 544}, // Ukuran lebih besar untuk area kedua
+  {x: 520, y: 12, w: 260, h: 544}, // Ukuran lebih besar untuk area ketiga
+  {x: 18, y: 190, w: 400, h: 340}, // Ukuran lebih besar untuk area keempat
+  {x: 184, y: 284, w: 920, h: 220}, // Ukuran lebih besar untuk area kelima
+  {x: 518, y: 284, w: 260, h: 350}, // Ukuran lebih besar untuk area keenam
+  {x: 200, y: 200, w: 400, h: 180}, // Ukuran lebih besar untuk area ketujuh
+  {x: 184, y: 272, w: 400, h: 40},  // Ukuran lebih besar untuk area kedelapan
+  {x: 510, y: 272, w: 40, h: 240},  // Ukuran lebih besar untuk area kesembilan
+  {x: 10, y: 200, w: 40, h: 280},   // Ukuran lebih besar untuk area kesepuluh
+];
+const PW=24, PH=36;
+function canWalk(x,y){
+  const pts=[{x,y},{x:x+PW,y},{x,y:y+PH},{x:x+PW,y:y+PH}];
+  for(const p of pts){
+    let ok=false;
+    for(const z of walkZones) if(p.x>=z.x&&p.x<=z.x+z.w&&p.y>=z.y&&p.y<=z.y+z.h){ok=true;break;}
+    if(!ok) return false;
+  }
+  return true;
+
+  
+}
+
+const hideSpots=[
+  {x:35,y:222,w:38,h:38,label:'Sofa'},
+  {x:280,y:80,w:38,h:38,label:'Meja Kerja'},
+  {x:540,y:60,w:38,h:38,label:'Lemari Arsip'},
+];
+const collectibles=[
+  {id:'cctv',x:120,y:150,w:16,h:20,label:'CCTV',color:'#cc5a2a',collected:false},
+  {id:'rab',x:370,y:90,w:14,h:18,label:'RAB',color:'#e8d888',collected:false},
+  {id:'ttd',x:440,y:100,w:14,h:18,label:'TTD',color:'#e8d888',collected:false},
+  {id:'rek',x:540,y:200,w:14,h:18,label:'REK',color:'#e8d888',collected:false},
+];
+
+let player={x:30,y:240,facing:'right',hidden:false};
+let pMoving=false, pFrame=0, pAnim=0;
+
+const GW=32, GH=48;
+const VISION_RANGE=110, VISION_ANGLE=0.65;
+const guards = [
+  {
+    x: 380, 
+    y: 80, 
+    facing: 'right', 
+    patrol: [
+      { x: 250, y: 90 },  // Start
+      { x: 250, y: 250 }, // Down
+      { x: 400, y: 250 }, // Right
+      { x: 400, y: 90 },  // Up
+    ], 
+    pi: 0, 
+    speed: 0.8, 
+    frame: 0, 
+    anim: 0
+  },
+  {
+    x: 200, 
+    y: 320, 
+    facing: 'right', 
+    patrol: [
+      { x: 500, y: 320 }, // Start
+      { x: 560, y: 320 }, // Right
+      { x: 560, y: 300 }, // Down
+      { x: 200, y: 300 }, // Left
+    ], 
+    pi: 0, 
+    speed: 0.75, 
+    frame: 0, 
+    anim: 0
+  },
+];
+
+let keys={}, gameOver=false, cctvOff=false, timeLeft=180;
+let collected={cctv:false,rab:false,ttd:false,rek:false};
+let glowPh=0, alertTO=null;
+
+document.addEventListener('keydown',e=>{
+  keys[e.key.toLowerCase()]=true;
+  if(e.key==='Shift') tryHide(true);
+  if(e.key.toLowerCase()==='e') tryInteract();
+  e.preventDefault();
+},{passive:false});
+document.addEventListener('keyup',e=>{
+  keys[e.key.toLowerCase()]=false;
+  if(e.key==='Shift') tryHide(false);
+});
+
+function tryHide(on){
+  if(on){
+    let spot=null;
+    for(const s of hideSpots){
+      if(Math.hypot((player.x+PW/2)-(s.x+s.w/2),(player.y+PH/2)-(s.y+s.h/2))<60){spot=s;break;}
+    }
+    player.hidden=!!spot;
+    showAlert(spot?'Bersembunyi di '+spot.label+'... tahan SHIFT':'Tidak ada tempat sembunyi di sini');
+  } else { player.hidden=false; }
+}
+
+function tryInteract(){
+  for(const c of collectibles){
+    if(c.collected) continue;
+    if(Math.hypot((player.x+PW/2)-(c.x+c.w/2),(player.y+PH/2)-(c.y+c.h/2))<60){
+      c.collected=true; collected[c.id]=true;
+      if(c.id==='cctv'){cctvOff=true;showAlert('CCTV dimatikan! Jangkauan penglihatan satpam berkurang.');}
+      else showAlert('Dokumen diambil: '+c.label);
+      document.getElementById('obj-'+c.id).classList.add('done');
+      document.getElementById('ev-'+c.id).classList.add('found');
+      updateProg(); return;
+    }
+  }
+  showAlert('Tidak ada yang bisa diambil di sini. Dekati lebih dekat.');
+}
+function updateProg(){
+  const d=(collected.cctv?1:0)+(collected.rab?1:0)+(collected.ttd?1:0)+(collected.rek?1:0);
+  document.getElementById('prog').textContent=d+' / 5 Selesai';
+}
+
+function updateGuards(){
+  for(const g of guards){
+    const t=g.patrol[g.pi],dx=t.x-g.x,dy=t.y-g.y,dist=Math.hypot(dx,dy);
+    if(dist<2){g.pi=(g.pi+1)%g.patrol.length;}
+    else{
+      g.x+=(dx/dist)*g.speed; g.y+=(dy/dist)*g.speed;
+      g.facing=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');
+    }
+    if(++g.anim>14){g.anim=0;g.frame=1-g.frame;}
+  }
+}
+
+function checkDetection(){
+  if(player.hidden) return;
+  const px=player.x+PW/2, py=player.y+PH/2;
+  const vr=cctvOff?VISION_RANGE*0.55:VISION_RANGE;
+  for(const g of guards){
+    const gx=g.x+GW/2,gy=g.y+GH/2,dx=px-gx,dy=py-gy,dist=Math.hypot(dx,dy);
+    if(dist>vr) continue;
+    const fx=g.facing==='right'?1:g.facing==='left'?-1:0;
+    const fy=g.facing==='down'?1:g.facing==='up'?-1:0;
+    if((dx*fx+dy*fy)/dist>Math.cos(VISION_ANGLE)){failGame();return;}
+  }
+}
+function checkExit(){
+  if(collected.rab&&collected.ttd&&collected.rek&&player.x<40&&player.y>195&&player.y<360) winGame();
+}
+
+function draw(){
+  ctx.clearRect(0,0,CW,CH);
+  ctx.save();
+  ctx.scale(SCALE,SCALE);
+  drawMap();
+  for(const s of hideSpots){
+    ctx.save();
+    ctx.globalAlpha=0.4;ctx.strokeStyle='#5a9acf';ctx.lineWidth=1.2;
+    ctx.setLineDash([4,3]);ctx.strokeRect(s.x,s.y,s.w,s.h);ctx.setLineDash([]);
+    ctx.globalAlpha=0.14;ctx.fillStyle='#2a5a8a';ctx.fillRect(s.x,s.y,s.w,s.h);
+    ctx.restore();
+    ctx.save();ctx.globalAlpha=0.7;ctx.fillStyle='#8ac8f0';
+    ctx.font='10px sans-serif';ctx.textAlign='center';
+    ctx.fillText('⌂',s.x+s.w/2,s.y+s.h/2+4);ctx.restore();
+  }
+  glowPh+=0.07;
+  for(const c of collectibles){
+    if(c.collected) continue;
+    const glow=0.5+0.5*Math.sin(glowPh);
+    ctx.save();ctx.shadowColor=c.color;ctx.shadowBlur=5+glow*12;
+    ctx.fillStyle=c.color;ctx.fillRect(c.x,c.y,c.w,c.h);ctx.restore();
+    ctx.save();ctx.globalAlpha=0.9;ctx.fillStyle='#f5e8b0';
+    ctx.font='bold 8px monospace';ctx.textAlign='center';
+    ctx.fillText(c.label,c.x+c.w/2,c.y-3);ctx.restore();
+  }
+  for(const g of guards){
+    const gx=g.x+GW/2,gy=g.y+GH/2;
+    const vr=cctvOff?VISION_RANGE*0.55:VISION_RANGE;
+    const angle=g.facing==='right'?0:g.facing==='left'?Math.PI:g.facing==='down'?Math.PI/2:-Math.PI/2;
+    ctx.save();ctx.globalAlpha=0.18;ctx.fillStyle='#ffdc64';
+    ctx.beginPath();ctx.moveTo(gx,gy);ctx.arc(gx,gy,vr,angle-VISION_ANGLE,angle+VISION_ANGLE);
+    ctx.closePath();ctx.fill();ctx.restore();
+  }
+  for(const g of guards){
+    renderChar(A.guard, g.x, g.y, GW, GH, g.facing, false, drawGuardPixel, g.frame);
+    ctx.save();ctx.globalAlpha=0.75;ctx.fillStyle='#e09080';
+    ctx.font='7px monospace';ctx.textAlign='center';
+    ctx.fillText('SATPAM',g.x+GW/2,g.y-4);ctx.restore();
+  }
+  renderChar(A.player, player.x, player.y, PW, PH, player.facing, player.hidden, drawPlayerPixel, pFrame);
+  ctx.save();ctx.globalAlpha=player.hidden?0.3:0.85;ctx.fillStyle='#d9c9a3';
+  ctx.font='7px monospace';ctx.textAlign='center';
+  ctx.fillText('RAKA',player.x+PW/2,player.y+PH+9);ctx.restore();
+  if(player.hidden){
+    ctx.save();ctx.fillStyle='#5a9acf';ctx.font='bold 8px sans-serif';
+    ctx.textAlign='center';ctx.globalAlpha=0.9;
+    ctx.fillText('TERSEMBUNYI',player.x+PW/2,player.y-5);ctx.restore();
+  }
+  const exG=0.5+0.5*Math.sin(glowPh*0.6);
+  const allDocs=collected.rab&&collected.ttd&&collected.rek;
+  ctx.save();ctx.globalAlpha=0.28+exG*0.3;
+  ctx.strokeStyle=allDocs?'#9aca5a':'#6b5a3a';ctx.lineWidth=2;
+  ctx.setLineDash([5,4]);ctx.strokeRect(10,200,18,140);ctx.setLineDash([]);
+  if(allDocs){
+    ctx.fillStyle='#9aca5a';ctx.globalAlpha=0.6+exG*0.3;
+    ctx.font='bold 8px monospace';ctx.textAlign='center';ctx.fillText('EXIT',19,280);
+  }
+  ctx.restore();
+  ctx.restore();
+}
+
+function gameLoop(){
+  if(gameOver) return;
+  let dx=0,dy=0;
+  const spd=2.0;
+  if(keys['w']||keys['arrowup'])    dy=-spd;
+  if(keys['s']||keys['arrowdown'])  dy= spd;
+  if(keys['a']||keys['arrowleft'])  dx=-spd;
+  if(keys['d']||keys['arrowright']) dx= spd;
+  pMoving=(dx!==0||dy!==0);
+  if(dx>0) player.facing='right'; else if(dx<0) player.facing='left';
+  else if(dy>0) player.facing='down'; else if(dy<0) player.facing='up';
+  if(!player.hidden){
+    if(dx!==0&&canWalk(player.x+dx,player.y)) player.x+=dx;
+    if(dy!==0&&canWalk(player.x,player.y+dy)) player.y+=dy;
+  }
+  if(pMoving){if(++pAnim>14){pAnim=0;pFrame=1-pFrame;}}
+  updateGuards();
+  checkDetection();
+  checkExit();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+const timerIv=setInterval(()=>{
+  if(gameOver)return;
+  timeLeft--;
+  document.getElementById('timerVal').textContent=
+    String(Math.floor(timeLeft/60)).padStart(2,'0')+':'+String(timeLeft%60).padStart(2,'0');
+  if(timeLeft<=30) document.getElementById('timerBox').classList.add('warning');
+  if(timeLeft<=0){clearInterval(timerIv);failGame('WAKTU HABIS','Pagi datang lebih cepat dari yang kau kira.');}
+},1000);
+
+function failGame(t='KETAHUAN',s='Satpam menemukanmu. Bayangan ayahmu kembali bersembunyi.'){
+  if(gameOver)return; gameOver=true;
+  document.getElementById('ovTitle').textContent=t;
+  document.getElementById('ovTitle').className='ov-title fail';
+  document.getElementById('ovSub').textContent=s;
+  document.getElementById('overlay').classList.add('show');
+}
+function winGame(){
+  if(gameOver)return; gameOver=true;
+  document.getElementById('ovTitle').textContent='BERHASIL';
+  document.getElementById('ovTitle').className='ov-title win';
+  document.getElementById('ovSub').textContent='"Tiga dokumen di tanganku. Bukti bahwa ayah bukan sekadar nama di batu nisan."';
+  document.getElementById('obj-exit').classList.add('done');
+  document.getElementById('prog').textContent='5 / 5 Selesai';
+  document.getElementById('overlay').classList.add('show');
+  const btns=document.querySelectorAll('.ov-btn');
+  btns[0].textContent='LANJUT CHAPTER 3';
+  btns[0].onclick=()=>window.location.href='chapter3.html';
+}
+function restart(){location.reload();}
+function goMenu(){window.location.href='menu.html';}
+function showAlert(text){
+  const el=document.getElementById('alertMsg');
+  el.textContent=text; el.classList.add('show');
+  clearTimeout(alertTO);
+  alertTO=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+loadAllAssets().then(()=>{
+  showAlert('Masuki kantor lewat pintu kiri. Hindari cahaya senter satpam!');
+  gameLoop();
+});
+</script>
+</body>
+</html>
